@@ -743,7 +743,7 @@ html[data-lang="ru"] .en { display: none; }
     <code>blobIdOffset</code> values</b> (server A: 0…, server B: 2·10¹²…, server C: 4·10¹²…). Ids then
     never collide across the fleet, which keeps the cheap file-level consolidation path open when you
     need to merge servers. The operational playbooks — growing a server, adding servers, shrinking
-    back to one, moving hosts — are recipes 12.7–12.11.</p>
+    back to one, moving hosts, going to the cloud and back — are recipes 12.7–12.12.</p>
   </div>
   <div class="ru">
     <p><b>За пределами одной машины.</b> Boins масштабируется горизонтально как парк
@@ -757,7 +757,7 @@ html[data-lang="ru"] .en { display: none; }
     значений <code>blobIdOffset</code></b> (сервер A: 0…, сервер B: 2·10¹²…, сервер C: 4·10¹²…).
     Тогда идентификаторы не пересекаются во всём парке, и остаётся открытым дешёвый путь файловой
     консолидации, когда серверы понадобится слить. Операционные сценарии — расширение сервера,
-    добавление серверов, сжатие обратно до одного, переезд хоста — это рецепты 12.7–12.11.</p>
+    добавление серверов, сжатие обратно до одного, переезд хоста, уход в облако и обратно — это рецепты 12.7–12.12.</p>
   </div>
 
   <h3><span class="en">2.7 Thread safety</span><span class="ru">2.7 Потокобезопасность</span></h3>
@@ -1721,6 +1721,143 @@ storage:
     <p>Если в ключах нет префикса сущности и hash невозможен — используйте схему&nbsp;3: новые загрузки
     направляйте в новый бакет через строку БД, старые строки оставьте на старом сервере и мигрируйте
     лениво или вовсе не мигрируйте.</p>
+  </div>
+
+  <h3><span class="en">12.12 Moving to cloud S3 — and back</span><span class="ru">12.12 Переезд в облачное S3 — и обратно</span></h3>
+  <div class="en">
+    <p>The payoff of the S3-compatible face: getting data in and out of Boins is commodity tooling —
+    no export format, no lock-in, in either direction. First, the full map of every kind of move:</p>
+  </div>
+  <div class="ru">
+    <p>Награда за S3-совместимый фасад: перенос данных в Boins и из него — рутинная операция штатными
+    инструментами, без формата экспорта и без lock-in, в обе стороны. Сначала — карта всех видов
+    переездов:</p>
+  </div>
+  <table>
+    <tr>
+      <th class="en">The move</th><th class="ru">Переезд</th>
+      <th class="en">Recipe</th><th class="ru">Рецепт</th>
+    </tr>
+    <tr><td class="en">More space on the same server (new disk / bigger disk)</td>
+        <td class="ru">Больше места на том же сервере (новый диск / диск побольше)</td><td>12.7</td></tr>
+    <tr><td class="en">A bucket between two Boins servers</td>
+        <td class="ru">Бакет между двумя серверами Boins</td><td>12.8</td></tr>
+    <tr><td class="en">Many Boins servers consolidated into one</td>
+        <td class="ru">Несколько серверов Boins в один</td><td>12.9</td></tr>
+    <tr><td class="en">A whole server to a new host</td>
+        <td class="ru">Сервер целиком на новый хост</td><td>12.10</td></tr>
+    <tr><td class="en">Splitting a bucket that outgrew its server</td>
+        <td class="ru">Разделение бакета, переросшего сервер</td><td>12.11</td></tr>
+    <tr><td class="en">Boins ⇄ cloud S3 (AWS, R2, B2…), and from embedded</td>
+        <td class="ru">Boins ⇄ облачное S3 (AWS, R2, B2…), и из embedded</td><td><b>12.12</b></td></tr>
+  </table>
+
+  <div class="en"><h3>Boins → cloud: rclone, straight through</h3>
+    <p>rclone copies between two S3 remotes without a staging directory (the stream passes through
+    the machine running it). Because Boins ETags are genuine MD5s, <code>--checksum</code> verifies
+    <em>content</em>, not just sizes; Content-Type and <code>x-amz-meta-*</code> travel along:</p>
+  </div>
+  <div class="ru"><h3>Boins → облако: rclone, напрямую</h3>
+    <p>rclone копирует между двумя S3-remote без каталога-стейджинга (поток идёт через машину, где он
+    запущен). Поскольку ETag-и Boins — настоящие MD5, <code>--checksum</code> сверяет
+    <em>содержимое</em>, а не только размеры; Content-Type и <code>x-amz-meta-*</code> едут вместе:</p>
+  </div>
+<pre><code># ~/.config/rclone/rclone.conf
+[boins]
+type = s3
+provider = Other
+access_key_id = boins-access-key
+secret_access_key = boins-secret-key
+endpoint = http://boins.internal:9000
+force_path_style = true
+
+[aws]
+type = s3
+provider = AWS
+region = eu-central-1
+access_key_id = AKIA...
+secret_access_key = ...
+
+# the move (re-runs copy only the delta — sync is incremental)
+rclone sync boins:media aws:my-company-media --checksum --transfers 16 --progress
+
+# without rclone: aws s3 sync in two hops through a staging dir (см. 12.8)
+aws s3 sync s3://media ./staging --endpoint-url http://boins.internal:9000
+aws s3 sync ./staging s3://my-company-media</code></pre>
+
+  <div class="en"><h3>Cloud → Boins: the same road, reversed</h3></div>
+  <div class="ru"><h3>Облако → Boins: та же дорога в обратную сторону</h3></div>
+<pre><code>rclone sync aws:my-company-media boins:media --checksum --transfers 16</code></pre>
+  <div class="en"><p>Leaving the cloud to cut the bill works with the identical command — only the
+    remotes swap places. Cloud egress fees apply once, on the way out.</p></div>
+  <div class="ru"><p>Уход из облака ради экономии — та же команда, remote-ы просто меняются местами.
+    Облачный egress оплачивается один раз, на выходе.</p></div>
+
+  <div class="en"><h3>From id-based embedded: a small Java migrator</h3>
+    <p>Pure embedded storage has no S3 endpoint to sync from, so the migrator is a loop over your own
+    database rows (or blob ids): read from the core, put to the target — cloud or a Boins server
+    alike. Keys come from your rows, or from <code>info().key()</code> if the application stored
+    meaningful keys in <code>BlobMetadata</code>:</p>
+  </div>
+  <div class="ru"><h3>Из id-based embedded: маленький Java-мигратор</h3>
+    <p>У чистого embedded-хранилища нет S3-endpoint, с которого можно синхронизироваться, поэтому
+    мигратор — это цикл по строкам вашей БД (или по blob id): читаем из ядра, кладём в цель — хоть в
+    облако, хоть в сервер Boins. Ключи берутся из ваших строк или из <code>info().key()</code>, если
+    приложение сохраняло осмысленные ключи в <code>BlobMetadata</code>:</p>
+  </div>
+<pre><code>try (Boins boins = Boins.open(Path.of("./data/boins/boins-options.yaml"))) {
+    for (AttachmentRow row : db.allAttachments()) {        // your table: blobId → key
+        BlobInfo info = boins.info(row.blobId());
+        try (InputStream in = boins.read(row.blobId())) {
+            cloud.putObject(b -> b.bucket("my-company-media")
+                            .key(row.key())                // or info.key()
+                            .contentType(info.contentType())
+                            .metadata(info.userMetadata()),
+                    RequestBody.fromInputStream(in, info.size()));
+        }
+        db.markMigrated(row.id());                         // resumable by design
+    }
+}</code></pre>
+
+  <div class="en"><h3>Switching without downtime</h3>
+    <ol>
+      <li><b>Bulk sync</b> in the background — the application keeps living on the source.</li>
+      <li>Switch <b>writes</b> to the target; read with a fallback: target first, on 404 — the source
+      (the same pattern as the bucket split in 12.11).</li>
+      <li><b>Delta sync</b>: re-run <code>rclone sync</code> to catch the tail written during step 1.</li>
+      <li>Verify (<code>rclone check</code>, object counts), drop the fallback, decommission the
+      source. For simple cases the same four steps fit into one maintenance window.</li>
+    </ol>
+  </div>
+  <div class="ru"><h3>Переключение без даунтайма</h3>
+    <ol>
+      <li><b>Bulk-sync</b> в фоне — приложение продолжает жить на источнике.</li>
+      <li>Переключите <b>запись</b> на цель; чтение — с фолбэком: сначала цель, при 404 — источник
+      (тот же паттерн, что при разделе бакета в 12.11).</li>
+      <li><b>Дельта-sync</b>: повторный <code>rclone sync</code> догонит хвост, записанный во время
+      шага 1.</li>
+      <li>Проверка (<code>rclone check</code>, счётчики объектов), снятие фолбэка, вывод источника из
+      эксплуатации. В простых случаях те же четыре шага умещаются в одно maintenance-окно.</li>
+    </ol>
+  </div>
+
+  <div class="note">
+    <span class="en"><b>Gotchas.</b> Cloud bucket names are globally unique — your <code>media</code>
+    is likely taken, so the bucket name in the app config changes; <em>keys stay untouched</em>.
+    CORS must be reconfigured on the cloud bucket — the Boins <code>cors</code> setting no longer
+    applies, while presigned URLs start pointing at the cloud automatically. Multipart-uploaded
+    objects match ETags only if part sizes match — verify those by size or your own digest. Budget
+    time and money up front: ingress is free but PUT requests are not (~$5 per million on AWS), and
+    10&nbsp;TB over a 1&nbsp;Gbit/s line is roughly a day of pure transfer; single-shot PUT tops out
+    at 5&nbsp;GB — larger objects go multipart.</span>
+    <span class="ru"><b>Подводные камни.</b> Имена облачных бакетов глобально уникальны — ваш
+    <code>media</code> наверняка занят, поэтому имя бакета в конфиге приложения изменится;
+    <em>ключи не трогаются</em>. CORS настраивается заново на облачном бакете — серверная настройка
+    <code>cors</code> Boins больше не действует, а presigned-ссылки сами начнут указывать на облако.
+    У multipart-объектов ETag совпадёт только при одинаковой нарезке частей — их сверяйте размером или
+    собственным дайджестом. Заранее посчитайте время и деньги: ingress бесплатен, но PUT-запросы —
+    нет (~$5 за миллион у AWS), а 10&nbsp;ТБ через канал 1&nbsp;Гбит/с — около суток чистой передачи;
+    одиночный PUT ограничен 5&nbsp;ГБ — крупнее идёт через multipart.</span>
   </div>
 </section>
 
