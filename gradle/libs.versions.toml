@@ -1,0 +1,17 @@
+[versions]
+javalin = "7.2.2"
+jackson = "2.19.1"
+slf4j = "2.0.17"
+junit = "5.13.3"
+awssdk = "2.46.18"
+
+[libraries]
+javalin = { module = "io.javalin:javalin", version.ref = "javalin" }
+jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind", version.ref = "jackson" }
+jackson-yaml = { module = "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml", version.ref = "jackson" }
+slf4j-simple = { module = "org.slf4j:slf4j-simple", version.ref = "slf4j" }
+junit-bom = { module = "org.junit:junit-bom", version.ref = "junit" }
+junit-jupiter = { module = "org.junit.jupiter:junit-jupiter" }
+junit-launcher = { module = "org.junit.platform:junit-platform-launcher" }
+awssdk-s3 = { module = "software.amazon.awssdk:s3", version.ref = "awssdk" }
+awssdk-urlconnection = { module = "software.amazon.awssdk:url-connection-client", version.ref = "awssdk" }

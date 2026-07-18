@@ -1,0 +1,1976 @@
+<!DOCTYPE html>
+<html lang="en" data-lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Boins Book — the blob storage manual</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2032%2032'%3E%3Cdefs%3E%3ClinearGradient%20id='g'%20x1='0'%20y1='0'%20x2='1'%20y2='1'%3E%3Cstop%20offset='0'%20stop-color='%23a5232f'/%3E%3Cstop%20offset='1'%20stop-color='%236b1a20'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect%20x='2'%20y='2'%20width='28'%20height='28'%20rx='7'%20fill='%23050202'/%3E%3Crect%20x='2'%20y='2'%20width='28'%20height='28'%20rx='7'%20fill='none'%20stroke='url(%23g)'%20stroke-width='2.5'/%3E%3Ccircle%20cx='16'%20cy='16'%20r='6'%20fill='url(%23g)'/%3E%3C/svg%3E">
+<style>
+:root {
+  /* TRON, deep-red program: near-black world, neon crimson & ember light lines. */
+  --bg: #050202;
+  --panel: #0b0405;
+  --panel-2: #110507;
+  --line: #2f0e12;
+  --line-strong: #6b1a20;
+  --ink: #f4e4e1;
+  --muted: #a67f7c;
+  --acc-1: #a5232f;
+  --acc-2: #c1454e;
+  --acc-grad: linear-gradient(120deg, var(--acc-1), var(--acc-2));
+  --deep-grad: linear-gradient(120deg, #9e2430, #58121a);
+  --code-bg: #080303;
+  --code-ink: #eed9d3;
+  --side-w: 250px;
+  --glow-1: 0 0 7px color-mix(in srgb, var(--acc-1) 55%, transparent),
+            0 0 22px color-mix(in srgb, var(--acc-1) 20%, transparent);
+  --glow-2: 0 0 7px color-mix(in srgb, var(--acc-2) 55%, transparent),
+            0 0 20px color-mix(in srgb, var(--acc-2) 18%, transparent);
+  --glow-text: 0 0 9px color-mix(in srgb, var(--acc-1) 60%, transparent);
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    /* The white grid: light world of the same program, red light lines stay. */
+    --bg: #f8f4f2;
+    --panel: #ffffff;
+    --panel-2: #f4e9e6;
+    --line: #e9d2cd;
+    --line-strong: #d9aca4;
+    --ink: #29100e;
+    --muted: #8c6660;
+    --acc-1: #a11622;
+    --acc-2: #ad3038;
+    --code-bg: #180709;
+    --code-ink: #eed9d3;
+    --glow-1: 0 0 6px color-mix(in srgb, var(--acc-1) 30%, transparent),
+              0 0 18px color-mix(in srgb, var(--acc-1) 12%, transparent);
+    --glow-2: 0 0 6px color-mix(in srgb, var(--acc-2) 30%, transparent),
+              0 0 16px color-mix(in srgb, var(--acc-2) 10%, transparent);
+    --glow-text: 0 0 8px color-mix(in srgb, var(--acc-1) 35%, transparent);
+  }
+}
+:root[data-theme="light"] {
+  --bg: #f8f4f2;
+  --panel: #ffffff;
+  --panel-2: #f4e9e6;
+  --line: #e9d2cd;
+  --line-strong: #d9aca4;
+  --ink: #29100e;
+  --muted: #8c6660;
+  --acc-1: #a11622;
+  --acc-2: #ad3038;
+  --code-bg: #180709;
+  --code-ink: #eed9d3;
+  --glow-1: 0 0 6px color-mix(in srgb, var(--acc-1) 30%, transparent),
+            0 0 18px color-mix(in srgb, var(--acc-1) 12%, transparent);
+  --glow-2: 0 0 6px color-mix(in srgb, var(--acc-2) 30%, transparent),
+            0 0 16px color-mix(in srgb, var(--acc-2) 10%, transparent);
+  --glow-text: 0 0 8px color-mix(in srgb, var(--acc-1) 35%, transparent);
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; scroll-padding-top: 1rem; }
+body {
+  margin: 0;
+  font-family: ui-sans-serif, system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-size: 1.09rem;
+  background:
+    radial-gradient(120% 70% at 50% 0%, color-mix(in srgb, var(--acc-1) 3%, transparent), transparent 60%),
+    var(--bg);
+  color: var(--ink);
+  line-height: 1.7;
+  display: grid;
+  grid-template-columns: var(--side-w) minmax(0, 1fr);
+}
+::selection { background: color-mix(in srgb, var(--acc-1) 40%, transparent); }
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--line-strong); border: 2px solid var(--bg); }
+::-webkit-scrollbar-thumb:hover { background: var(--acc-1); }
+
+/* ---------------------------------------------------------------- sidebar */
+aside.side {
+  position: sticky; top: 0; height: 100vh;
+  background: var(--panel);
+  border-right: 1px solid var(--line);
+  box-shadow: inset -14px 0 28px -22px color-mix(in srgb, var(--acc-1) 45%, transparent);
+  padding: 1.6rem 1.1rem;
+  display: flex; flex-direction: column; gap: 1.2rem;
+  overflow-y: auto;
+}
+.brand {
+  font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
+  font-weight: 800; font-size: 1.3rem; letter-spacing: .04em;
+  background: var(--deep-grad);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  filter: drop-shadow(0 0 8px color-mix(in srgb, var(--acc-1) 30%, transparent));
+}
+.brand small {
+  display: block; font-weight: 500; font-size: .68rem; letter-spacing: .3em;
+  text-transform: uppercase; color: var(--muted);
+  -webkit-background-clip: initial; background-clip: initial;
+  filter: none;
+}
+.lang-switch {
+  display: flex; border: 1px solid var(--line-strong); border-radius: 2px; overflow: hidden;
+  width: fit-content;
+}
+.lang-switch button {
+  border: 0; background: transparent; color: var(--muted);
+  font-family: ui-monospace, Consolas, monospace; font-size: .76rem; font-weight: 700;
+  letter-spacing: .06em;
+  padding: .3rem .85rem; cursor: pointer;
+}
+html[data-lang="en"] .lang-switch button[data-set="en"],
+html[data-lang="ru"] .lang-switch button[data-set="ru"] {
+  background: var(--acc-grad); color: #050202;
+  box-shadow: var(--glow-1);
+}
+.controls { display: flex; gap: .5rem; align-items: center; }
+button.theme-toggle {
+  border: 1px solid var(--line-strong); background: transparent; color: var(--muted);
+  border-radius: 2px; width: 1.95rem; height: 1.95rem;
+  font-size: 1rem; line-height: 1; cursor: pointer; padding: 0;
+}
+button.theme-toggle:hover {
+  color: var(--acc-1); border-color: var(--acc-1);
+  box-shadow: var(--glow-1); text-shadow: var(--glow-text);
+}
+nav.toc { display: flex; flex-direction: column; gap: .1rem; font-size: .88rem; }
+nav.toc a {
+  display: flex; gap: .6rem; align-items: baseline;
+  color: var(--muted); text-decoration: none;
+  padding: .34rem .6rem; border-radius: 2px;
+  border-left: 2px solid transparent;
+}
+nav.toc a:hover {
+  color: var(--ink); background: var(--panel-2);
+  border-left-color: var(--acc-1);
+  text-shadow: var(--glow-text);
+}
+nav.toc a .n {
+  font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
+  font-size: .7rem; color: var(--acc-2); min-width: 1.3em;
+}
+.side-foot { margin-top: auto; font-size: .72rem; color: var(--muted); }
+
+/* ---------------------------------------------------------------- content */
+.content { min-width: 0; }
+header.hero {
+  padding: 3.4rem 1.4rem 2.5rem;
+  position: relative;
+  overflow: hidden;
+  border-bottom: 1px solid var(--line-strong);
+  box-shadow: 0 1px 18px -6px color-mix(in srgb, var(--acc-1) 35%, transparent);
+}
+header.hero::before {
+  /* The grid. */
+  content: "";
+  position: absolute; inset: 0;
+  background:
+    radial-gradient(45% 60% at 22% 30%, color-mix(in srgb, var(--acc-1) 14%, transparent), transparent 70%),
+    radial-gradient(45% 60% at 78% 15%, color-mix(in srgb, var(--acc-2) 13%, transparent), transparent 70%),
+    linear-gradient(color-mix(in srgb, var(--acc-1) 14%, transparent) 1px, transparent 1px) 0 0 / 100% 34px,
+    linear-gradient(90deg, color-mix(in srgb, var(--acc-1) 14%, transparent) 1px, transparent 1px) 0 0 / 34px 100%;
+  -webkit-mask-image: radial-gradient(90% 130% at 50% 0%, black 35%, transparent 80%);
+  mask-image: radial-gradient(90% 130% at 50% 0%, black 35%, transparent 80%);
+  pointer-events: none;
+}
+header.hero::after {
+  /* Scanlines. */
+  content: "";
+  position: absolute; inset: 0;
+  background: repeating-linear-gradient(0deg, transparent 0 3px, rgba(0, 0, 0, .09) 3px 4px);
+  pointer-events: none;
+}
+.hero-inner { max-width: 50rem; margin: 0 auto; position: relative; z-index: 1; }
+h1.logo {
+  margin: 0;
+  font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
+  font-size: clamp(2.4rem, 6.5vw, 3.9rem);
+  font-weight: 800; letter-spacing: .06em; text-transform: uppercase;
+  background: var(--deep-grad);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  filter: drop-shadow(0 0 14px color-mix(in srgb, var(--acc-1) 35%, transparent));
+}
+p.tagline { margin: .6rem 0 0; font-size: 1.08rem; color: var(--muted); max-width: 34rem; }
+
+main { max-width: 50rem; margin: 0 auto; padding: 1rem 1.4rem 4rem; }
+section { margin: 3.4rem 0; }
+h2 {
+  font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
+  font-size: 1.16rem; font-weight: 750; letter-spacing: .05em; text-transform: uppercase;
+  margin: 0 0 1.1rem; padding-bottom: .5rem;
+  border-bottom: 1px solid var(--line);
+  position: relative;
+}
+h2::after {
+  content: ""; position: absolute; left: 0; bottom: -1px;
+  width: 4.5rem; height: 2px; background: var(--acc-grad);
+  box-shadow: var(--glow-1);
+}
+h3 {
+  font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
+  font-size: .98rem; font-weight: 700; color: var(--acc-2);
+  margin: 1.8rem 0 .5rem;
+  text-shadow: 0 0 8px color-mix(in srgb, var(--acc-2) 30%, transparent);
+}
+a { color: var(--acc-2); }
+a:hover { text-shadow: var(--glow-text); }
+
+code, pre { font-family: ui-monospace, "Cascadia Code", Consolas, "SF Mono", monospace; font-size: .85em; }
+code {
+  background: color-mix(in srgb, var(--acc-1) 12%, transparent);
+  color: inherit;
+  padding: .1em .35em; border-radius: 2px;
+}
+pre {
+  background: var(--code-bg); color: var(--code-ink);
+  border: 1px solid var(--line-strong);
+  border-left: 2px solid var(--acc-1);
+  box-shadow: inset 0 0 34px color-mix(in srgb, var(--acc-1) 3%, transparent);
+  padding: 1.05rem 1.25rem; border-radius: 2px;
+  overflow-x: auto; line-height: 1.5;
+}
+pre code { background: none; padding: 0; }
+
+table { border-collapse: collapse; width: 100%; margin: 1.1rem 0; font-size: .92rem; }
+th, td { padding: .5rem .65rem; text-align: left; vertical-align: top; }
+th {
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .09em;
+  color: var(--muted); border-bottom: 1px solid var(--acc-1);
+}
+td { border-bottom: 1px solid var(--line); }
+tr:last-child td { border-bottom: 0; }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+
+.note {
+  background: var(--panel);
+  border: 1px solid var(--line); border-left: 2px solid var(--acc-2); border-radius: 2px;
+  box-shadow: inset 0 0 26px color-mix(in srgb, var(--acc-2) 4%, transparent);
+  padding: .8rem 1.1rem .8rem 2.5rem; margin: 1.2rem 0; font-size: .93rem;
+  position: relative;
+}
+.note::before {
+  content: "i";
+  position: absolute; left: .85rem; top: .9rem;
+  width: 1.1rem; height: 1.1rem; border-radius: 50%;
+  background: var(--acc-grad); color: #050202;
+  box-shadow: var(--glow-2);
+  font-weight: 800; font-size: .72rem; line-height: 1.1rem; text-align: center;
+}
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: .9rem; margin: 1.3rem 0; }
+.card {
+  background: var(--panel); border: 1px solid var(--line); border-radius: 2px;
+  border-top: 2px solid var(--line-strong);
+  padding: 1rem 1.1rem;
+  transition: border-color .15s ease, box-shadow .15s ease, transform .15s ease;
+}
+.card:hover {
+  border-color: var(--acc-1); border-top-color: var(--acc-1);
+  box-shadow: var(--glow-1);
+  transform: translateY(-2px);
+}
+.card b {
+  font-family: ui-monospace, Consolas, monospace; font-size: .88rem;
+  background: var(--acc-grad);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.card p { margin: .45rem 0 0; font-size: .9rem; color: var(--muted); }
+
+.rec { display: flex; flex-wrap: wrap; gap: .3rem; margin: 1.1rem 0; }
+.rec span {
+  font-family: ui-monospace, Consolas, monospace; font-size: .72rem;
+  background: var(--panel-2);
+  border: 1px solid var(--line); border-bottom: 2px solid var(--acc-1);
+  box-shadow: 0 3px 10px -4px color-mix(in srgb, var(--acc-1) 55%, transparent);
+  padding: .32rem .5rem; border-radius: 2px; white-space: nowrap;
+}
+.rec span:nth-child(even) {
+  border-bottom-color: var(--acc-2);
+  box-shadow: 0 3px 10px -4px color-mix(in srgb, var(--acc-2) 55%, transparent);
+}
+
+figure.figure {
+  background: var(--panel); border: 1px solid var(--line-strong); border-radius: 2px;
+  box-shadow: inset 0 0 40px color-mix(in srgb, var(--acc-1) 4%, transparent);
+  padding: 1rem 1rem .8rem; margin: 1.3rem 0;
+}
+figure.figure svg {
+  display: block; width: 100%; height: auto; color: var(--ink);
+  font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
+}
+figure.figure figcaption { font-size: .85rem; color: var(--muted); margin-top: .6rem; line-height: 1.5; }
+.dg-frame { fill: none; stroke: var(--line-strong); stroke-dasharray: 5 4; }
+.dg-box   { fill: var(--panel-2); stroke: var(--line-strong); }
+.dg-inner { fill: var(--bg); stroke: var(--line); }
+.dg-t  { fill: var(--ink); font-size: 13px; }
+.dg-m  { fill: var(--muted); font-size: 11px; }
+.dg-a1 { fill: var(--acc-1); font-size: 11.5px; }
+.dg-a2 { fill: var(--acc-2); font-size: 11.5px; }
+.dg-arrow {
+  stroke: var(--acc-2); fill: none; stroke-width: 1.5;
+  filter: drop-shadow(0 0 3px color-mix(in srgb, var(--acc-2) 60%, transparent));
+}
+.dg-mk { fill: var(--acc-2); }
+.dg-disk {
+  fill: var(--panel-2); stroke: var(--acc-1); stroke-width: 1.2;
+  filter: drop-shadow(0 0 3px color-mix(in srgb, var(--acc-1) 50%, transparent));
+}
+
+footer {
+  border-top: 1px solid var(--line-strong);
+  box-shadow: 0 -1px 16px -8px color-mix(in srgb, var(--acc-1) 35%, transparent);
+  padding: 1.6rem 1.4rem; font-size: .82rem; color: var(--muted);
+}
+footer .footer-inner { max-width: 50rem; margin: 0 auto; }
+
+html[data-lang="en"] .ru { display: none; }
+html[data-lang="ru"] .en { display: none; }
+
+/* ---------------------------------------------------------------- mobile */
+@media (max-width: 900px) {
+  body { grid-template-columns: 1fr; }
+  aside.side {
+    position: sticky; top: 0; height: auto; z-index: 10;
+    flex-direction: row; align-items: center; gap: .9rem;
+    padding: .55rem .9rem;
+    border-right: 0; border-bottom: 1px solid var(--line-strong);
+    box-shadow: 0 1px 14px -6px color-mix(in srgb, var(--acc-1) 40%, transparent);
+  }
+  .brand { font-size: 1.05rem; }
+  .brand small { display: none; }
+  nav.toc {
+    flex-direction: row; overflow-x: auto; gap: .1rem;
+    scrollbar-width: none;
+  }
+  nav.toc::-webkit-scrollbar { display: none; }
+  nav.toc a { padding: .25rem .5rem; white-space: nowrap; }
+  nav.toc a .n { display: none; }
+  .side-foot { display: none; }
+  header.hero, main, footer { padding-left: 1.2rem; padding-right: 1.2rem; }
+}
+</style>
+</head>
+<body>
+
+<aside class="side">
+  <div class="brand">boins<small>book</small></div>
+  <div class="controls">
+    <div class="lang-switch">
+      <button data-set="en" onclick="setLang('en')">EN</button>
+      <button data-set="ru" onclick="setLang('ru')">RU</button>
+    </div>
+    <button class="theme-toggle" onclick="toggleTheme()" title="Dark / light">◐</button>
+  </div>
+  <nav class="toc">
+    <a href="#intro"><span class="n">01</span><span class="en">Intro</span><span class="ru">Введение</span></a>
+    <a href="#architecture"><span class="n">02</span><span class="en">Architecture</span><span class="ru">Архитектура</span></a>
+    <a href="#embedded"><span class="n">03</span><span class="en">Embedded</span><span class="ru">Embedded</span></a>
+    <a href="#server"><span class="n">04</span><span class="en">Server</span><span class="ru">Сервер</span></a>
+    <a href="#s3"><span class="n">05</span><span class="en">S3 API</span><span class="ru">S3 API</span></a>
+    <a href="#admin"><span class="n">06</span><span class="en">Admin</span><span class="ru">Админ</span></a>
+    <a href="#faults"><span class="n">07</span><span class="en">Faults</span><span class="ru">Исключения</span></a>
+    <a href="#metrics"><span class="n">08</span><span class="en">Metrics</span><span class="ru">Метрики</span></a>
+    <a href="#performance"><span class="n">09</span><span class="en">Performance</span><span class="ru">Производительность</span></a>
+    <a href="#operations"><span class="n">10</span><span class="en">Operations</span><span class="ru">Эксплуатация</span></a>
+    <a href="#deployment"><span class="n">11</span><span class="en">Linux / systemd</span><span class="ru">Linux / systemd</span></a>
+    <a href="#recipes"><span class="n">12</span><span class="en">Recipes</span><span class="ru">Рецепты</span></a>
+    <a href="#comparison"><span class="n">13</span><span class="en">Vs. alternatives</span><span class="ru">Сравнение</span></a>
+    <a href="#roadmap"><span class="n">14</span><span class="en">Roadmap</span><span class="ru">Развитие</span></a>
+  </nav>
+  <div class="side-foot">Boins 2.0 · Apache-2.0</div>
+</aside>
+
+<div class="content">
+
+<header class="hero">
+  <div class="hero-inner">
+    <h1 class="logo">boins</h1>
+    <p class="tagline en">A minimal, fast, S3-compatible blob storage for the JVM.</p>
+    <p class="tagline ru">Минималистичное, быстрое, S3-совместимое хранилище блобов для JVM.</p>
+  </div>
+</header>
+
+<main>
+
+<!-- ==================================================== INTRO -->
+<section id="intro">
+  <h2><span class="en">1. What is Boins</span><span class="ru">1. Что такое Boins</span></h2>
+  <div class="en">
+    <p>Boins stores binary objects (blobs) by packing them together into a few large files
+    instead of creating one file per object. A compact fixed-size index maps a numeric blob id
+    to the exact byte range, so reading a blob costs a single positional read — no directory
+    walks, no per-object file handles, no filesystem metadata pressure at hundreds of millions
+    of objects.</p>
+    <p>Boins runs in two modes:</p>
+    <ul>
+      <li><b>Embedded</b> — the <code>boins-core</code> library inside your JVM process, zero dependencies;</li>
+      <li><b>Server</b> — <code>boins-server</code> exposes the storage over an <b>S3-compatible HTTP API</b>,
+      so any AWS SDK, <code>aws s3</code> CLI, MinIO client or existing S3 integration works out of the box,
+      including presigned URLs for direct-to-storage transfers.</li>
+    </ul>
+    <p>Design values, in order: <em>minimalism, reliability, performance, scalability</em>.</p>
+  </div>
+  <div class="ru">
+    <p>Boins хранит бинарные объекты (блобы), упаковывая их вместе в несколько больших файлов,
+    вместо того чтобы создавать по файлу на объект. Компактный индекс с записями фиксированного
+    размера отображает числовой идентификатор блоба в точный диапазон байтов, поэтому чтение —
+    это одно позиционное чтение с диска: без обхода каталогов, без файловых дескрипторов на каждый
+    объект, без нагрузки на метаданные ФС даже при сотнях миллионов объектов.</p>
+    <p>Boins работает в двух режимах:</p>
+    <ul>
+      <li><b>Embedded</b> — библиотека <code>boins-core</code> внутри вашего JVM-процесса, ноль зависимостей;</li>
+      <li><b>Сервер</b> — <code>boins-server</code> открывает хранилище через <b>S3-совместимый HTTP API</b>:
+      работает любой AWS SDK, CLI <code>aws s3</code>, клиент MinIO и существующие интеграции с S3,
+      включая подписанные ссылки (presigned URL) для передачи данных напрямую в хранилище.</li>
+    </ul>
+    <p>Ценности проекта по порядку: <em>минимализм, надёжность, производительность, масштабируемость</em>.</p>
+  </div>
+</section>
+
+<!-- ==================================================== ARCHITECTURE -->
+<section id="architecture">
+  <h2><span class="en">2. Architecture</span><span class="ru">2. Архитектура</span></h2>
+
+  <div class="grid">
+    <div class="card"><b>Repository</b>
+      <p class="en">One directory, typically one per physical disk: an index, blob files, a string heap and a content-type dictionary.</p>
+      <p class="ru">Один каталог, обычно на физический диск: индекс, blob-файлы, куча строк и словарь content-type.</p>
+    </div>
+    <div class="card"><b>index.boins</b>
+      <p class="en">Fixed 80-byte records. <code>blobId = offset + ordinal</code>, so lookup is one positional read.</p>
+      <p class="ru">Записи по 80 байт. <code>blobId = offset + порядковый номер</code>, поиск — одно позиционное чтение.</p>
+    </div>
+    <div class="card"><b>blob.N.boins</b>
+      <p class="en">Large files (limit = 2<sup>blobFileLimit</sup> bytes) holding blob content back to back.</p>
+      <p class="ru">Большие файлы (лимит = 2<sup>blobFileLimit</sup> байт), в которых блобы лежат подряд.</p>
+    </div>
+    <div class="card"><b>free-cells.boins</b>
+      <p class="en">Registry of deleted-blob cells available for reuse — deletes don't waste space forever.</p>
+      <p class="ru">Реестр ячеек удалённых блобов для переиспользования — место после удаления не теряется.</p>
+    </div>
+  </div>
+
+  <figure class="figure">
+    <svg viewBox="0 0 880 400" role="img" aria-label="Boins embedded mode diagram">
+      <defs>
+        <marker id="arrA" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0 0 L10 5 L0 10 z" class="dg-mk"/>
+        </marker>
+      </defs>
+      <!-- JVM frame -->
+      <rect x="12" y="14" width="856" height="372" rx="12" class="dg-frame"/>
+      <text x="30" y="42" class="dg-m">Application JVM — a single process, exactly one Boins instance per storage</text>
+
+      <!-- app threads -->
+      <text x="30" y="128" class="dg-m">application threads</text>
+      <text x="30" y="144" class="dg-m">(any number)</text>
+      <line x1="30"  y1="170" x2="196" y2="170" class="dg-arrow" marker-end="url(#arrA)"/>
+      <line x1="30"  y1="205" x2="196" y2="205" class="dg-arrow" marker-end="url(#arrA)"/>
+      <line x1="30"  y1="240" x2="196" y2="240" class="dg-arrow" marker-end="url(#arrA)"/>
+
+      <!-- Boins core -->
+      <rect x="204" y="120" width="216" height="170" rx="10" class="dg-box"/>
+      <text x="220" y="150" class="dg-t">Boins (embedded)</text>
+      <text x="220" y="170" class="dg-a2">boins-core · thread-safe</text>
+      <text x="220" y="196" class="dg-m">write · read · delete · info</text>
+      <text x="220" y="214" class="dg-m">free-cell registry</text>
+      <text x="220" y="232" class="dg-m">metrics · fault store</text>
+      <text x="220" y="274" class="dg-m">routes reads by blob id,</text>
+      <text x="220" y="258" class="dg-m">inserts weighted by free space</text>
+
+      <!-- arrows to repos -->
+      <line x1="420" y1="160" x2="512" y2="120" class="dg-arrow" marker-end="url(#arrA)"/>
+      <line x1="420" y1="250" x2="512" y2="292" class="dg-arrow" marker-end="url(#arrA)"/>
+
+      <!-- repo 1 -->
+      <rect x="520" y="64" width="330" height="132" rx="10" class="dg-box"/>
+      <text x="536" y="90" class="dg-t">repository  /data/ssd1/repo1</text>
+      <text x="536" y="112" class="dg-a1">blobIdOffset = 0 · ids [0 … 10¹²)</text>
+      <text x="536" y="132" class="dg-m">index.boins · blob.N.boins · heap.boins</text>
+      <text x="536" y="150" class="dg-m">diskType: SSD — concurrent writers</text>
+      <ellipse cx="806" cy="160" rx="26" ry="7" class="dg-disk"/>
+      <rect x="780" y="160" width="52" height="20" class="dg-disk" style="stroke-dasharray:none"/>
+      <ellipse cx="806" cy="180" rx="26" ry="7" class="dg-disk"/>
+      <text x="806" y="165" text-anchor="middle" class="dg-m" style="font-size:9px">disk 1</text>
+
+      <!-- repo 2 -->
+      <rect x="520" y="236" width="330" height="132" rx="10" class="dg-box"/>
+      <text x="536" y="262" class="dg-t">repository  /mnt/hdd2/repo2</text>
+      <text x="536" y="284" class="dg-a2">blobIdOffset = 10¹² · ids [10¹² … ∞)</text>
+      <text x="536" y="304" class="dg-m">index.boins · blob.N.boins · heap.boins</text>
+      <text x="536" y="322" class="dg-m">diskType: HDD — chunk-serialized writes</text>
+      <ellipse cx="806" cy="332" rx="26" ry="7" class="dg-disk"/>
+      <rect x="780" y="332" width="52" height="20" class="dg-disk" style="stroke-dasharray:none"/>
+      <ellipse cx="806" cy="352" rx="26" ry="7" class="dg-disk"/>
+      <text x="806" y="337" text-anchor="middle" class="dg-m" style="font-size:9px">disk 2</text>
+    </svg>
+    <figcaption>
+      <span class="en"><b>Embedded mode.</b> One shared, thread-safe Boins instance inside the application
+      process. Each repository owns a contiguous blob-id range starting at its offset; reads are routed by id,
+      inserts pick a repository randomly, weighted by free disk space.</span>
+      <span class="ru"><b>Режим embedded.</b> Один общий потокобезопасный экземпляр Boins внутри процесса
+      приложения. Каждый репозиторий владеет непрерывным диапазоном идентификаторов, начиная со своего offset;
+      чтение маршрутизируется по id, вставка выбирает репозиторий случайно с весом по свободному месту.</span>
+    </figcaption>
+  </figure>
+
+  <figure class="figure">
+    <svg viewBox="0 0 880 620" role="img" aria-label="Boins server mode diagram">
+      <defs>
+        <marker id="arrB" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0 0 L10 5 L0 10 z" class="dg-mk"/>
+        </marker>
+      </defs>
+
+      <!-- clients -->
+      <rect x="20"  y="16" width="250" height="56" rx="10" class="dg-box"/>
+      <text x="36"  y="40" class="dg-t">Browser</text>
+      <text x="36"  y="58" class="dg-m">presigned URL (direct-to-storage)</text>
+      <rect x="315" y="16" width="250" height="56" rx="10" class="dg-box"/>
+      <text x="331" y="40" class="dg-t">Backend service</text>
+      <text x="331" y="58" class="dg-m">AWS SDK · SigV4</text>
+      <rect x="610" y="16" width="250" height="56" rx="10" class="dg-box"/>
+      <text x="626" y="40" class="dg-t">aws s3 CLI · rclone</text>
+      <text x="626" y="58" class="dg-m">sync, backups, migrations</text>
+
+      <text x="440" y="106" text-anchor="middle" class="dg-a2">S3 API · HTTP(S) · Signature V4</text>
+      <line x1="145" y1="72" x2="215" y2="140" class="dg-arrow" marker-end="url(#arrB)"/>
+      <line x1="415" y1="72" x2="330" y2="140" class="dg-arrow" marker-end="url(#arrB)"/>
+      <line x1="465" y1="72" x2="660" y2="140" class="dg-arrow" marker-end="url(#arrB)"/>
+      <line x1="735" y1="72" x2="710" y2="140" class="dg-arrow" marker-end="url(#arrB)"/>
+
+      <!-- host A -->
+      <rect x="20" y="140" width="500" height="452" rx="12" class="dg-frame"/>
+      <text x="36" y="166" class="dg-t">host  s3-a.example.com : 9000</text>
+      <rect x="36" y="180" width="468" height="46" rx="8" class="dg-box"/>
+      <text x="270" y="208" text-anchor="middle" class="dg-m">boins-server — S3 API · /_admin · virtual threads</text>
+
+      <rect x="36" y="248" width="224" height="60" rx="8" class="dg-inner"/>
+      <text x="52" y="272" class="dg-t">bucket  user-media</text>
+      <text x="52" y="290" class="dg-m">keys.boins:  key → blobId</text>
+      <rect x="280" y="248" width="224" height="60" rx="8" class="dg-inner"/>
+      <text x="296" y="272" class="dg-t">bucket  backups</text>
+      <text x="296" y="290" class="dg-m">keys.boins:  key → blobId</text>
+
+      <line x1="148" y1="308" x2="148" y2="330" class="dg-arrow" marker-end="url(#arrB)"/>
+      <line x1="392" y1="308" x2="392" y2="330" class="dg-arrow" marker-end="url(#arrB)"/>
+      <rect x="36" y="334" width="468" height="44" rx="8" class="dg-box"/>
+      <text x="270" y="356" text-anchor="middle" class="dg-t">shared Boins core</text>
+      <text x="270" y="372" text-anchor="middle" class="dg-m">routes by blob id range</text>
+
+      <line x1="148" y1="378" x2="148" y2="398" class="dg-arrow" marker-end="url(#arrB)"/>
+      <line x1="392" y1="378" x2="392" y2="398" class="dg-arrow" marker-end="url(#arrB)"/>
+      <rect x="36" y="402" width="224" height="78" rx="8" class="dg-box"/>
+      <text x="52" y="426" class="dg-t">repo1  /data/nvme1</text>
+      <text x="52" y="446" class="dg-a1">offset 0</text>
+      <text x="52" y="464" class="dg-m">ids [0 … 10¹²)</text>
+      <rect x="280" y="402" width="224" height="78" rx="8" class="dg-box"/>
+      <text x="296" y="426" class="dg-t">repo2  /data/nvme2</text>
+      <text x="296" y="446" class="dg-a2">offset 10¹²</text>
+      <text x="296" y="464" class="dg-m">ids [10¹² … 2·10¹²)</text>
+
+      <ellipse cx="148" cy="514" rx="26" ry="7" class="dg-disk"/>
+      <rect x="122" y="514" width="52" height="22" class="dg-disk"/>
+      <ellipse cx="148" cy="536" rx="26" ry="7" class="dg-disk"/>
+      <text x="148" y="566" text-anchor="middle" class="dg-m">disk 1</text>
+      <ellipse cx="392" cy="514" rx="26" ry="7" class="dg-disk"/>
+      <rect x="366" y="514" width="52" height="22" class="dg-disk"/>
+      <ellipse cx="392" cy="536" rx="26" ry="7" class="dg-disk"/>
+      <text x="392" y="566" text-anchor="middle" class="dg-m">disk 2</text>
+
+      <!-- host B -->
+      <rect x="550" y="140" width="310" height="452" rx="12" class="dg-frame"/>
+      <text x="566" y="166" class="dg-t">host  s3-b.example.com : 9000</text>
+      <rect x="566" y="180" width="278" height="46" rx="8" class="dg-box"/>
+      <text x="705" y="208" text-anchor="middle" class="dg-m">boins-server</text>
+
+      <rect x="566" y="248" width="278" height="60" rx="8" class="dg-inner"/>
+      <text x="582" y="272" class="dg-t">bucket  analytics</text>
+      <text x="582" y="290" class="dg-m">keys.boins:  key → blobId</text>
+
+      <line x1="705" y1="308" x2="705" y2="330" class="dg-arrow" marker-end="url(#arrB)"/>
+      <rect x="566" y="334" width="278" height="44" rx="8" class="dg-box"/>
+      <text x="705" y="356" text-anchor="middle" class="dg-t">Boins core</text>
+
+      <line x1="705" y1="378" x2="705" y2="398" class="dg-arrow" marker-end="url(#arrB)"/>
+      <rect x="566" y="402" width="278" height="78" rx="8" class="dg-box"/>
+      <text x="582" y="426" class="dg-t">repo1  /data/nvme1</text>
+      <text x="582" y="446" class="dg-a1">offset 2·10¹²</text>
+      <text x="582" y="464" class="dg-m">ids [2·10¹² … ∞)</text>
+
+      <ellipse cx="705" cy="514" rx="26" ry="7" class="dg-disk"/>
+      <rect x="679" y="514" width="52" height="22" class="dg-disk"/>
+      <ellipse cx="705" cy="536" rx="26" ry="7" class="dg-disk"/>
+      <text x="705" y="566" text-anchor="middle" class="dg-m">disk 1</text>
+    </svg>
+    <figcaption>
+      <span class="en"><b>Server mode, two hosts.</b> Sharding is done at the bucket level: every bucket lives
+      wholly on one host, and clients pick the endpoint per bucket. Note the blob-id ranges: each host uses its
+      own region of offsets (0…, 10¹²…, 2·10¹²…), so ids never collide between hosts — which keeps the
+      file-level consolidation of recipe 12.9 possible.</span>
+      <span class="ru"><b>Режим сервера, два хоста.</b> Шардирование идёт на уровне бакетов: каждый бакет целиком
+      живёт на одном хосте, а клиент выбирает endpoint по бакету. Обратите внимание на диапазоны blob id: у каждого
+      хоста своя область offset-ов (0…, 10¹²…, 2·10¹²…), идентификаторы не пересекаются между хостами — это
+      сохраняет возможность файловой консолидации из рецепта 12.9.</span>
+    </figcaption>
+  </figure>
+
+  <h3><span class="en">2.1 The index record (80 bytes)</span><span class="ru">2.1 Индексная запись (80 байт)</span></h3>
+  <div class="rec">
+    <span>blobFileIndex:2</span><span>blobPosition:8</span><span>blobSize:8</span><span>cellSize:8</span>
+    <span>createTime:8</span><span>deleteTime:8</span><span>keyPosition:8</span><span>metaPosition:8</span>
+    <span>contentTypeId:2</span><span>md5:16</span><span>partCount:4</span>
+  </div>
+  <div class="en">
+    <p>Everything S3 needs lives in the record: the MD5 digest makes ETags instant, <code>partCount</code>
+    distinguishes multipart etags, <code>keyPosition/metaPosition</code> point into the append-only string
+    heap holding the object key and user metadata, <code>contentTypeId</code> references a tiny in-memory
+    dictionary. <code>deleteTime = -1</code> means the blob is alive; a deleted record keeps its
+    <code>cellSize</code> so the region can be reused.</p>
+  </div>
+  <div class="ru">
+    <p>В записи есть всё, что нужно S3: дайджест MD5 даёт мгновенные ETag, <code>partCount</code>
+    отличает multipart-etag, <code>keyPosition/metaPosition</code> указывают в append-only кучу строк
+    с ключом объекта и пользовательскими метаданными, <code>contentTypeId</code> ссылается на маленький
+    словарь в памяти. <code>deleteTime = -1</code> — блоб жив; удалённая запись сохраняет
+    <code>cellSize</code>, чтобы регион можно было переиспользовать.</p>
+  </div>
+
+  <h3><span class="en">2.2 Writes</span><span class="ru">2.2 Запись</span></h3>
+  <div class="en">
+    <p>A write first asks the free-cell registry for a deleted cell of a fitting size (best fit).
+    If none fits, the blob is appended: the writer <em>reserves</em> a region with an atomic counter and
+    streams content directly into it — on SSD many writers stream concurrently into disjoint regions;
+    on HDD disk writes are serialized per chunk to keep the access pattern mostly sequential without
+    letting one slow client stall the others. The MD5 digest is computed during the copy. Only after
+    the content is fully in place is the index record inserted — the record is the commit point.</p>
+    <p>If a client aborts mid-upload, the reserved region is registered as a free cell and a later
+    write of similar size reclaims it.</p>
+  </div>
+  <div class="ru">
+    <p>Запись сначала спрашивает у реестра свободных ячеек подходящую по размеру ячейку удалённого
+    блоба (best fit). Если такой нет — блоб дописывается в конец: писатель <em>резервирует</em> регион
+    атомарным счётчиком и стримит содержимое прямо в него. На SSD несколько писателей пишут
+    одновременно в непересекающиеся регионы; на HDD запись сериализуется по чанкам — паттерн доступа
+    остаётся почти последовательным, но медленный клиент не блокирует остальных. MD5 считается во
+    время копирования. Индексная запись вставляется только когда содержимое полностью на месте —
+    запись в индексе и есть точка фиксации.</p>
+    <p>Если клиент оборвал загрузку, зарезервированный регион регистрируется как свободная ячейка,
+    и последующая запись похожего размера использует его.</p>
+  </div>
+
+  <h3><span class="en">2.3 Free cells and the waste tolerance</span><span class="ru">2.3 Свободные ячейки и допуск потерь</span></h3>
+  <div class="en">
+    <p>Blobs in Boins can be deleted. The cell a deleted blob occupied becomes free, and a new blob
+    may take such a cell of equal or larger size. A larger cell, though, may be taken only if the
+    wasted fraction is acceptable for that cell size:
+    <code>maxWaste(s) = 1 / e<sup>1.7·(log₂s/10)^0.7</sup></code>. Small cells tolerate generous waste;
+    large cells demand a tight fit, which keeps absolute waste bounded:</p>
+  </div>
+  <div class="ru">
+    <p>В Boins блобы можно удалять. Ячейка, которую занимал удалённый блоб, считается
+    освободившейся. Новый блоб может занять такую ячейку равного или большего размера. Причём занять
+    ячейку большего размера можно, только если доля потерь приемлема для этого
+    размера ячейки: <code>maxWaste(s) = 1 / e<sup>1.7·(log₂s/10)^0.7</sup></code>. Маленькие ячейки
+    терпят щедрые потери, большие требуют плотной посадки — абсолютные потери остаются ограниченными:</p>
+  </div>
+  <table>
+    <tr><th class="en">Cell size</th><th class="ru">Размер ячейки</th><th class="num en">Max waste</th><th class="num ru">Макс. потери</th></tr>
+    <tr><td colspan="2">1 KiB</td><td class="num" colspan="2">≈ 53&nbsp;%</td></tr>
+    <tr><td colspan="2">1 MiB</td><td class="num" colspan="2">≈ 20&nbsp;%</td></tr>
+    <tr><td colspan="2">1 GiB</td><td class="num" colspan="2">≈ 7&nbsp;%</td></tr>
+  </table>
+
+  <h3><span class="en">2.4 Crash consistency</span><span class="ru">2.4 Устойчивость к сбоям</span></h3>
+  <div class="en">
+    <p>Boins deliberately avoids a write-ahead log. Instead, the free-cell registry is allowed to be
+    stale: on startup every registry entry is cross-checked against the index and dropped if the
+    donor record is alive, missing, or its cell was already consumed by a replacement blob (replacement
+    zeroes the donor's <code>cellSize</code> in the same index fsync as the new insert). A torn tail in a
+    bucket's key index is detected by per-record CRC32 and truncated. The result: after a crash the
+    storage self-heals on open, and the worst case is a bounded amount of leaked space — never
+    double-allocated cells or corrupted reads.</p>
+  </div>
+  <div class="ru">
+    <p>Boins сознательно обходится без write-ahead-лога. Вместо этого реестру свободных ячеек
+    разрешено «отставать»: при старте каждая его запись сверяется с индексом и отбрасывается, если
+    донорская запись жива, отсутствует или её ячейка уже занята блобом-заменой (замена обнуляет
+    <code>cellSize</code> донора тем же fsync индекса, что и вставка новой записи). Оборванный хвост
+    индекса ключей бакета определяется по CRC32 каждой записи и усекается. Итог: после сбоя хранилище
+    самовосстанавливается при открытии; худший случай — ограниченная утечка места, но никогда —
+    двойное выделение ячейки или повреждённое чтение.</p>
+  </div>
+
+  <h3><span class="en">2.5 Durability modes</span><span class="ru">2.5 Режимы надёжности</span></h3>
+  <table>
+    <tr><th>fsyncMode</th><th class="en">Behaviour</th><th class="ru">Поведение</th></tr>
+    <tr><td><code>ALWAYS</code></td>
+      <td class="en">fsync after every write/delete. Maximum durability, ~135 ops/s on a laptop SSD.</td>
+      <td class="ru">fsync после каждой записи/удаления. Максимальная надёжность, ~135 оп/с на SSD ноутбука.</td></tr>
+    <tr><td><code>INTERVAL</code></td>
+      <td class="en">a background thread flushes dirty files every N ms (default 1000). The sweet spot; server default.</td>
+      <td class="ru">фоновый поток сбрасывает изменённые файлы каждые N мс (по умолчанию 1000). Золотая середина; дефолт сервера.</td></tr>
+    <tr><td><code>NEVER</code></td>
+      <td class="en">leave flushing to the OS. Fastest; a power failure may lose recent writes.</td>
+      <td class="ru">сброс оставлен ОС. Быстрее всего; при потере питания возможна потеря последних записей.</td></tr>
+  </table>
+
+  <h3><span class="en">2.6 Scaling with repositories</span><span class="ru">2.6 Масштабирование репозиториями</span></h3>
+  <div class="en">
+    <p>A storage may span several repositories (disks). Each owns a contiguous blob-id range starting
+    at its <code>blobIdOffset</code>; reads route by id with a floor lookup. Inserts pick a repository
+    randomly, <em>weighted by free disk space</em>, so disks fill evenly. A repository manifest pins the
+    format version and offset, making repositories self-describing and safe to relocate.</p>
+  </div>
+  <div class="ru">
+    <p>Хранилище может состоять из нескольких репозиториев (дисков). Каждый владеет непрерывным
+    диапазоном идентификаторов, начиная со своего <code>blobIdOffset</code>; чтение маршрутизируется
+    по id. Вставка выбирает репозиторий случайно, <em>с весом по свободному месту</em>, поэтому диски
+    заполняются равномерно. Манифест репозитория фиксирует версию формата и offset — репозиторий
+    самоописываем и его безопасно переносить.</p>
+  </div>
+
+  <div class="en">
+    <p><b>Beyond one machine.</b> Boins scales horizontally as a fleet of <em>independent</em> servers —
+    there is no cluster protocol to operate, no consensus to babysit. Sharding happens at the bucket
+    level: every bucket lives wholly on one host, and applications keep a small
+    bucket&nbsp;→&nbsp;endpoint map. Presigned URLs carry the host name, so direct-to-storage
+    transfers land on the right server automatically. Whole buckets move between servers with
+    standard S3 tooling (<code>aws s3 sync</code>, rclone) — blob ids are internal and never leave a host.</p>
+    <p>One planning rule pays for itself later: <b>give every server its own region of
+    <code>blobIdOffset</code> values</b> (server A: 0…, server B: 2·10¹²…, server C: 4·10¹²…). Ids then
+    never collide across the fleet, which keeps the cheap file-level consolidation path open when you
+    need to merge servers. The operational playbooks — growing a server, adding servers, shrinking
+    back to one, moving hosts — are recipes 12.7–12.11.</p>
+  </div>
+  <div class="ru">
+    <p><b>За пределами одной машины.</b> Boins масштабируется горизонтально как парк
+    <em>независимых</em> серверов — нет кластерного протокола, нет консенсуса, за которым надо следить.
+    Шардирование идёт на уровне бакетов: каждый бакет целиком живёт на одном хосте, а приложение хранит
+    маленькую карту «бакет&nbsp;→&nbsp;endpoint». Presigned-ссылки содержат имя хоста, поэтому передачи
+    напрямую в хранилище автоматически попадают на нужный сервер. Целые бакеты переносятся между
+    серверами штатными S3-инструментами (<code>aws s3 sync</code>, rclone) — идентификаторы блобов
+    внутренние и хост не покидают.</p>
+    <p>Одно правило планирования окупается позже: <b>выделяйте каждому серверу собственную область
+    значений <code>blobIdOffset</code></b> (сервер A: 0…, сервер B: 2·10¹²…, сервер C: 4·10¹²…).
+    Тогда идентификаторы не пересекаются во всём парке, и остаётся открытым дешёвый путь файловой
+    консолидации, когда серверы понадобится слить. Операционные сценарии — расширение сервера,
+    добавление серверов, сжатие обратно до одного, переезд хоста — это рецепты 12.7–12.11.</p>
+  </div>
+
+  <h3><span class="en">2.7 Thread safety</span><span class="ru">2.7 Потокобезопасность</span></h3>
+  <div class="en">
+    <p><b>Boins is fully thread-safe — in embedded mode too.</b> Open <em>one</em> instance per storage
+    and share it across any number of threads (platform or virtual): every public method of
+    <code>Boins</code> may be called concurrently without external synchronization. The server mode
+    builds on exactly this property — Javalin serves each request on its own virtual thread against
+    the single shared core.</p>
+    <ul>
+      <li><b>Writes</b> reserve disjoint regions with atomic counters; on SSD any number of writers
+      stream concurrently, on HDD disk writes are serialized per chunk. Index appends take a
+      short per-repository lock (an 80-byte write).</li>
+      <li><b>Reads</b> are positional and lock-free — unlimited concurrent readers, even of the same
+      blob, and readers never block writers.</li>
+      <li><b>Deletes</b> are guarded by striped per-blob-id locks, so a concurrent double delete cannot
+      hand the same cell to two writers.</li>
+      <li><b>Metrics</b> use <code>LongAdder</code>s and lock-free windows — negligible hot-path cost.</li>
+    </ul>
+    <p>The one rule: <b>a storage belongs to a single Boins instance in a single process</b>. Do not
+    open the same repository directories from two instances or two JVMs — there is no cross-process
+    file lock, and concurrent processes would corrupt the storage. If several applications need the
+    same data, put <code>boins-server</code> in front of it.</p>
+  </div>
+  <div class="ru">
+    <p><b>Boins полностью потокобезопасен — в том числе в режиме embedded.</b> Откройте <em>один</em>
+    экземпляр на хранилище и делите его между любым числом потоков (платформенных или виртуальных):
+    каждый публичный метод <code>Boins</code> можно вызывать конкурентно без внешней синхронизации.
+    Серверный режим построен ровно на этом свойстве — Javalin обслуживает каждый запрос на своём
+    виртуальном потоке поверх единственного общего ядра.</p>
+    <ul>
+      <li><b>Запись</b> резервирует непересекающиеся регионы атомарными счётчиками; на SSD писатели
+      стримят одновременно, на HDD запись на диск сериализуется по чанкам. Вставка в индекс берёт
+      короткий лок на репозиторий (запись 80 байт).</li>
+      <li><b>Чтение</b> позиционное и без блокировок — сколько угодно одновременных читателей, даже
+      одного и того же блоба; читатели никогда не блокируют писателей.</li>
+      <li><b>Удаление</b> защищено полосатыми (striped) локами по blob id — конкурентное двойное
+      удаление не отдаст одну ячейку двум писателям.</li>
+      <li><b>Метрики</b> — <code>LongAdder</code>-ы и lock-free окна, издержки на горячем пути ничтожны.</li>
+    </ul>
+    <p>Единственное правило: <b>хранилище принадлежит одному экземпляру Boins в одном процессе</b>.
+    Не открывайте одни и те же каталоги репозиториев из двух экземпляров или двух JVM — межпроцессной
+    файловой блокировки нет, и параллельные процессы повредят хранилище. Если одни данные нужны
+    нескольким приложениям — поставьте перед ними <code>boins-server</code>.</p>
+  </div>
+</section>
+
+<!-- ==================================================== EMBEDDED -->
+<section id="embedded">
+  <h2><span class="en">3. Embedded mode</span><span class="ru">3. Режим embedded</span></h2>
+  <div class="en"><p>The core is a single dependency-free library:</p></div>
+  <div class="ru"><p>Ядро — одна библиотека без зависимостей:</p></div>
+<pre><code>BoinsOptions options = BoinsOptions.builder()
+        .addRepository(Path.of("/data/repo1"), 0L, DiskType.SSD)
+        .addRepository(Path.of("/mnt/disk2/repo2"), 1_000_000_000_000L, DiskType.HDD)
+        .blobFileLimit(36)                    // 2^36 = 64 GiB per blob file
+        .fsyncMode(FsyncMode.INTERVAL)
+        .build();
+
+try (Boins boins = Boins.open(options)) {
+    WriteResult w = boins.write(Path.of("report.pdf"),
+            new BlobMetadata("docs/report.pdf", "application/pdf"));
+
+    BlobInfo info = boins.info(w.blobId());   // size, etag, key, metadata...
+
+    try (InputStream in = boins.read(w.blobId())) { /* stream it */ }
+    try (InputStream in = boins.read(w.blobId(), 0, 1024)) { /* range read */ }
+
+    boins.delete(w.blobId());                 // cell becomes reusable
+}</code></pre>
+  <div class="en">
+    <p>Streaming writes (<code>write(InputStream, length, metadata)</code>) copy straight from the source
+    into the blob file — no temporary files, MD5 on the fly.</p>
+    <p>The storage can also be configured by a YAML file instead of the builder. If the file
+    does not exist, Boins creates it with commented defaults (parent directories included);
+    an existing but invalid file fails with a clear <code>BoinsException</code>. Relative paths
+    inside the file are resolved against the file's directory:</p>
+  </div>
+  <div class="ru">
+    <p>Потоковая запись (<code>write(InputStream, length, metadata)</code>) копирует данные из источника
+    прямо в blob-файл — без временных файлов, MD5 считается на лету.</p>
+    <p>Хранилище можно конфигурировать и YAML-файлом вместо билдера. Если файла нет, Boins
+    создаст его с закомментированными значениями по умолчанию (включая родительские каталоги);
+    существующий, но невалидный файл даёт понятный <code>BoinsException</code>. Относительные пути
+    внутри файла разрешаются от каталога самого файла:</p>
+  </div>
+<pre><code>// Creates ./boins/boins-options.yaml with defaults on first run
+try (Boins boins = Boins.open(Path.of("./boins/boins-options.yaml"))) {
+    boins.write(data, BlobMetadata.ofKey("first-blob"));
+}</code></pre>
+  <div class="en"><p>The generated file looks like this — every field carries a comment, and it is
+  exactly what the strict parser accepts back:</p></div>
+  <div class="ru"><p>Созданный файл выглядит так — каждое поле снабжено комментарием, и ровно этот
+  формат принимает обратно строгий парсер:</p></div>
+<pre><code># Boins storage options.
+# Relative paths are resolved against this file's directory.
+
+blobFileLimit: 36              # blob file size limit as a power of two (2^36 = 64 GiB)
+minBlobBytes: 1024             # append-candidate cutoff, see the Boins Book
+fsyncMode: INTERVAL            # ALWAYS | INTERVAL | NEVER
+fsyncIntervalMillis: 1000      # flush period for fsyncMode INTERVAL, in milliseconds
+minRepositoryFreeBytes: 1073741824   # a repo stops accepting inserts below this free space (1 GiB)
+metricsFlushIntervalMillis: 10000    # how often cumulative metrics are persisted
+# freeCellsFile: ./repo1/free-cells.boins   # defaults to &lt;first repository&gt;/free-cells.boins
+# metricsFile: ./repo1/metrics.boins        # defaults to &lt;first repository&gt;/metrics.boins
+
+repositories:                  # one entry per physical disk
+  - dir: ./repo1               # repository directory, created if missing
+    blobIdOffset: 0            # first blob id of this repository; NEVER change it later
+    diskType: SSD              # SSD | HDD (write concurrency strategy)</code></pre>
+  <div class="note">
+    <span class="en">The instance is <b>thread-safe</b>: open one per storage and share it across all
+    application threads — no external synchronization needed. Never open the same repository
+    directories from two instances or processes. Details in section 2.7.</span>
+    <span class="ru">Экземпляр <b>потокобезопасен</b>: откройте один на хранилище и делите между всеми
+    потоками приложения — внешняя синхронизация не нужна. Никогда не открывайте одни и те же каталоги
+    репозиториев из двух экземпляров или процессов. Подробности — в разделе 2.7.</span>
+  </div>
+</section>
+
+<!-- ==================================================== SERVER -->
+<section id="server">
+  <h2><span class="en">4. Server mode</span><span class="ru">4. Режим сервера</span></h2>
+  <div class="en"><p>Start the standalone server with a YAML config:</p></div>
+  <div class="ru"><p>Самостоятельный сервер запускается с YAML-конфигом:</p></div>
+<pre><code># boins.yaml
+host: 0.0.0.0
+port: 9000
+virtualThreads: true          # serve requests on virtual threads
+adminKey: change-me           # /_admin auth; blank = admin disabled
+gracefulShutdownMillis: 15000 # drain in-flight requests on SIGTERM / close()
+
+cors:
+  allowedOrigins: []          # e.g. ["https://app.example.com"] — needed for
+                              # browser uploads via presigned URLs; empty = disabled
+
+ssl:
+  enabled: false              # true → HTTPS on the same port
+  certificatePath: ./tls/cert.pem   # PEM chain (leaf first)
+  privateKeyPath: ./tls/key.pem     # PKCS#8 ("BEGIN PRIVATE KEY")
+
+storage:
+  blobFileLimit: 36
+  fsyncMode: INTERVAL         # ALWAYS | INTERVAL | NEVER
+  repositories:
+    - dir: ./data/repo1
+      blobIdOffset: 0
+      diskType: SSD
+
+faults:
+  dir: ./data/faults          # exception reports land here
+
+bucketDataDir: ./data/buckets
+buckets:
+  - name: my-bucket
+    accessKey: boins-access-key
+    secretKey: boins-secret-key</code></pre>
+<pre><code># development
+./gradlew :boins-server:run --args="boins.yaml"
+
+# production: build a self-contained distribution with a launcher script
+./gradlew :boins-server:installDist
+build/install/boins-server/bin/boins-server boins.yaml</code></pre>
+  <div class="note">
+    <span class="en">First run without a config file? The server creates a commented default
+    <code>boins.yaml</code> at the given path (parent directories included) and starts with it. The
+    default defines <em>no buckets</em>, so nothing is exposed with well-known credentials — fill in
+    the <code>buckets</code> section and restart. An existing but invalid file is never replaced:
+    the server fails with the parse error instead.</span>
+    <span class="ru">Первый запуск без конфига? Сервер создаст закомментированный
+    <code>boins.yaml</code> по указанному пути (включая родительские каталоги) и стартует с ним.
+    По умолчанию в нём <em>нет бакетов</em>, поэтому наружу не торчит ничего с известными всем
+    ключами — заполните секцию <code>buckets</code> и перезапустите. Существующий, но невалидный файл
+    никогда не перезаписывается: сервер упадёт с ошибкой разбора.</span>
+  </div>
+  <div class="note">
+    <span class="en">SSL note: PKCS#1 keys (<code>BEGIN RSA PRIVATE KEY</code>) must be converted once:
+    <code>openssl pkcs8 -topk8 -nocrypt -in key.pem -out key-pkcs8.pem</code>.</span>
+    <span class="ru">Замечание про SSL: ключи PKCS#1 (<code>BEGIN RSA PRIVATE KEY</code>) нужно один раз
+    сконвертировать: <code>openssl pkcs8 -topk8 -nocrypt -in key.pem -out key-pkcs8.pem</code>.</span>
+  </div>
+  <div class="en">
+    <p>Embedded server (same API, no YAML): build a <code>BoinsServerConfig</code> in code and call
+    <code>BoinsServer.start(config)</code>; <code>port: 0</code> binds an ephemeral port.</p>
+    <p>Buckets are defined in the configuration, not via the S3 CreateBucket call — credentials belong
+    in config, and a public endpoint must not mint buckets.</p>
+  </div>
+  <div class="ru">
+    <p>Встраиваемый сервер (тот же API без YAML): соберите <code>BoinsServerConfig</code> в коде и
+    вызовите <code>BoinsServer.start(config)</code>; <code>port: 0</code> займёт эфемерный порт.</p>
+    <p>Бакеты определяются конфигурацией, а не вызовом S3 CreateBucket — учётным данным место в
+    конфиге, и публичная точка не должна создавать бакеты сама.</p>
+  </div>
+</section>
+
+<!-- ==================================================== S3 -->
+<section id="s3">
+  <h2><span class="en">5. S3 compatibility</span><span class="ru">5. Совместимость с S3</span></h2>
+  <div class="en">
+    <p>The API is verified against the official AWS SDK for Java v2 in the integration test suite.
+    Authentication is AWS Signature V4 — both header-based and <b>presigned query</b> (the
+    “client-signed upload/download” / direct-to-storage pattern). All streaming payload modes the SDKs
+    send are supported, including signed chunks and trailing checksums.</p>
+  </div>
+  <div class="ru">
+    <p>API проверяется официальным AWS SDK for Java v2 в интеграционных тестах. Аутентификация —
+    AWS Signature V4: и через заголовки, и через <b>подписанные ссылки</b> (паттерн
+    «Client-Signed Upload/Download» / Direct-to-Storage). Поддержаны все потоковые режимы тела запроса,
+    которые шлют SDK, включая подписанные чанки и трейлерные контрольные суммы.</p>
+  </div>
+  <table>
+    <tr><th class="en">Operation</th><th class="ru">Операция</th><th class="en">Status</th><th class="ru">Статус</th></tr>
+    <tr><td colspan="2">PutObject / GetObject / HeadObject / DeleteObject</td><td colspan="2">✔</td></tr>
+    <tr><td colspan="2">DeleteObjects (batch), CopyObject</td><td colspan="2">✔</td></tr>
+    <tr><td colspan="2">ListObjects V1 + V2 <span class="en">(prefix, delimiter, pagination, encoding-type)</span><span class="ru">(prefix, delimiter, пагинация, encoding-type)</span></td><td colspan="2">✔</td></tr>
+    <tr><td colspan="2">Multipart: Create / UploadPart / Complete / Abort / ListParts / ListMultipartUploads</td><td colspan="2">✔</td></tr>
+    <tr><td colspan="2">Presigned GET/PUT, Range, If-Match / If-None-Match, Content-MD5, x-amz-meta-*</td><td colspan="2">✔</td></tr>
+    <tr><td colspan="2">response-content-* <span class="en">overrides (custom download filename etc.)</span><span class="ru">переопределения (имя файла при скачивании и т.п.)</span></td><td colspan="2">✔</td></tr>
+    <tr><td colspan="2">ListBuckets / HeadBucket / GetBucketLocation / GetBucketVersioning</td><td colspan="2">✔</td></tr>
+    <tr><td colspan="2">CreateBucket / DeleteBucket</td>
+      <td colspan="2"><span class="en">config-managed</span><span class="ru">через конфиг</span></td></tr>
+    <tr><td colspan="2">Versioning, ACL/Policy, object lock, lifecycle</td><td colspan="2">—</td></tr>
+  </table>
+  <div class="note">
+    <span class="en">Differences from AWS S3: buckets come from configuration; the 5&nbsp;MiB minimum part
+    size is not enforced; in-flight multipart uploads do not survive a server restart (clients retry).</span>
+    <span class="ru">Отличия от AWS S3: бакеты задаются конфигурацией; минимальный размер части 5&nbsp;МиБ
+    не навязывается; незавершённые multipart-загрузки не переживают рестарт сервера (клиенты повторяют).</span>
+  </div>
+<pre><code>S3Client s3 = S3Client.builder()
+        .endpointOverride(URI.create("http://localhost:9000"))
+        .region(Region.US_EAST_1)
+        .credentialsProvider(StaticCredentialsProvider.create(
+                AwsBasicCredentials.create("boins-access-key", "boins-secret-key")))
+        .forcePathStyle(true)                 // path-style: /bucket/key
+        .build();
+
+s3.putObject(b -> b.bucket("my-bucket").key("photos/cat.jpg"), RequestBody.fromFile(path));</code></pre>
+</section>
+
+<!-- ==================================================== ADMIN -->
+<section id="admin">
+  <h2><span class="en">6. Admin interface</span><span class="ru">6. Админ-интерфейс</span></h2>
+  <div class="en">
+    <p>JSON endpoints under <code>/_admin</code> (bucket names can never start with an underscore, so the
+    prefix is collision-free). Auth: <code>Authorization: Bearer &lt;adminKey&gt;</code> or the
+    <code>X-Boins-Admin-Key</code> header.</p>
+    <p>The HTTP admin is a thin JSON wrapper over the core's Java API — <b>in embedded mode the same
+    information and actions are available as direct method calls</b>, no HTTP involved (see the
+    mapping at the end of this section).</p>
+  </div>
+  <div class="ru">
+    <p>JSON-эндпоинты под <code>/_admin</code> (имя бакета не может начинаться с подчёркивания, коллизий
+    нет). Аутентификация: <code>Authorization: Bearer &lt;adminKey&gt;</code> или заголовок
+    <code>X-Boins-Admin-Key</code>.</p>
+    <p>HTTP-админ — это тонкая JSON-обёртка над Java-API ядра: <b>в embedded-режиме та же информация
+    и те же действия доступны прямыми вызовами методов</b>, без всякого HTTP (см. соответствие в конце
+    раздела).</p>
+  </div>
+  <table>
+    <tr><th>Endpoint</th><th class="en">Returns</th><th class="ru">Возвращает</th></tr>
+    <tr><td><code>GET /_admin/health</code></td>
+      <td class="en">liveness probe, no auth</td><td class="ru">проверка живости, без аутентификации</td></tr>
+    <tr><td><code>GET /_admin/state</code></td>
+      <td class="en">repositories, free cells, object counts per bucket, uptime</td>
+      <td class="ru">репозитории, свободные ячейки, число объектов по бакетам, uptime</td></tr>
+    <tr><td><code>GET /_admin/metrics</code></td>
+      <td class="en">storage counters + rates, HTTP request counters</td>
+      <td class="ru">счётчики и скорости хранилища, счётчики HTTP-запросов</td></tr>
+    <tr><td><code>GET /_admin/faults</code></td>
+      <td class="en">deduplicated fault summaries, most recent first</td>
+      <td class="ru">сводки исключений после дедупликации, свежие сверху</td></tr>
+    <tr><td><code>GET /_admin/faults/{hash}</code></td>
+      <td class="en">full report of one fault (stack trace, HTTP context)</td>
+      <td class="ru">полный отчёт по исключению (стек, HTTP-контекст)</td></tr>
+    <tr><td><code>POST /_admin/flush</code></td>
+      <td class="en">forces all dirty files to disk</td><td class="ru">принудительный fsync всех изменённых файлов</td></tr>
+  </table>
+  <h3><span class="en">Fault callbacks</span><span class="ru">Callback-и об исключениях</span></h3>
+<pre><code>BoinsServer server = BoinsServer.start(config);
+server.onFault(event -> alerting.notify(
+        event.throwable(), event.occurrences(), event.context()));</code></pre>
+  <div class="en"><p>Listeners fire on <em>every</em> occurrence, including rate-limited duplicates.</p></div>
+  <div class="ru"><p>Слушатели вызываются на <em>каждом</em> событии, включая подавленные rate-limit-ом дубликаты.</p></div>
+
+  <h3><span class="en">The admin interface in embedded mode</span><span class="ru">Админ-интерфейс в embedded-режиме</span></h3>
+  <div class="en">
+    <p>Every admin endpoint has a 1:1 low-level counterpart on <code>Boins</code> and
+    <code>FaultStore</code> — the server merely serializes these calls to JSON:</p>
+  </div>
+  <div class="ru">
+    <p>У каждого админ-эндпоинта есть точный низкоуровневый аналог в <code>Boins</code> и
+    <code>FaultStore</code> — сервер лишь сериализует эти вызовы в JSON:</p>
+  </div>
+  <table>
+    <tr>
+      <th class="en">HTTP (server)</th><th class="ru">HTTP (сервер)</th>
+      <th class="en">Java (embedded)</th><th class="ru">Java (embedded)</th>
+    </tr>
+    <tr><td><code>GET /_admin/state</code></td>
+      <td><code>boins.state()</code> <span class="en">— repositories, free cells</span><span class="ru">— репозитории, свободные ячейки</span></td></tr>
+    <tr><td><code>GET /_admin/metrics</code></td>
+      <td><code>boins.metrics()</code> <span class="en">— counters, throughput, rates</span><span class="ru">— счётчики, пропускная способность, скорости</span></td></tr>
+    <tr><td><code>GET /_admin/faults</code></td>
+      <td><code>faultStore.list()</code></td></tr>
+    <tr><td><code>GET /_admin/faults/{hash}</code></td>
+      <td><code>faultStore.reportText(hash)</code></td></tr>
+    <tr><td><code>POST /_admin/flush</code></td>
+      <td><code>boins.flush()</code></td></tr>
+    <tr><td><span class="en">fault callbacks</span><span class="ru">callback-и об исключениях</span></td>
+      <td><code>faultStore.addListener(listener)</code></td></tr>
+  </table>
+<pre><code>// Embedded: the full "admin interface" without a single HTTP call
+FaultStore faults = FaultStore.open(Path.of("./data/faults"));
+faults.addListener(event -> alerting.notify(event.throwable(), event.occurrences()));
+
+Boins boins = Boins.open(BoinsOptions.builder()
+        .addRepository(Path.of("./data/repo1"), 0L, DiskType.SSD)
+        .faultStore(faults)              // the core reports internal faults here
+        .build());
+
+MetricsSnapshot m = boins.metrics();     // traffic counters, read/write speeds
+BoinsState state = boins.state();        // repositories, free cells
+boins.flush();                           // force everything to disk
+faults.record(myException, Map.of("job", "nightly-import"));   // your own faults, same store</code></pre>
+  <div class="note">
+    <span class="en">Two details. <code>FaultStore</code> is optional: without
+    <code>.faultStore(…)</code> the core simply does not persist internal exceptions. And it is an
+    object, so the YAML path (<code>Boins.open(Path)</code>) cannot wire it — use the builder when
+    you need the fault store in embedded mode. The two <em>server-only</em> extras are per-bucket
+    object counts and HTTP request counters: buckets and HTTP do not exist at the core level.</span>
+    <span class="ru">Две детали. <code>FaultStore</code> опционален: без <code>.faultStore(…)</code>
+    ядро просто не сохраняет внутренние исключения. И это объект, поэтому через YAML-путь
+    (<code>Boins.open(Path)</code>) его не подключить — используйте билдер, когда в embedded нужно
+    хранилище исключений. Только <em>серверных</em> дополнений два: счётчики объектов по бакетам и
+    счётчики HTTP-запросов — бакетов и HTTP на уровне ядра не существует.</span>
+  </div>
+</section>
+
+<!-- ==================================================== FAULTS -->
+<section id="faults">
+  <h2><span class="en">7. Fault store</span><span class="ru">7. Хранилище исключений</span></h2>
+  <div class="en">
+    <p>Exceptional events are saved as flat text files in one directory — no WAL, no trees. Each unique
+    fault gets one report file named <code>&lt;Type&gt;-&lt;hash&gt;.txt</code>. Uniqueness is the exception type
+    plus the first N stack trace lines (default 5); repeated occurrences bump a counter, and the report
+    file is rewritten at most once per cooldown (default 60&nbsp;s) — a fault storm cannot flood the disk.
+    A file cap (default 1000) evicts the least recently seen fault. HTTP request context — method, path
+    and <em>all headers</em> — is stored with server-side errors.</p>
+  </div>
+  <div class="ru">
+    <p>Исключительные события сохраняются плоскими текстовыми файлами в одной папке — без WAL и без
+    деревьев. Каждому уникальному исключению — один файл-отчёт <code>&lt;Тип&gt;-&lt;hash&gt;.txt</code>.
+    Уникальность — тип исключения плюс первые N строк стектрейса (по умолчанию 5); повторы увеличивают
+    счётчик, а файл перезаписывается не чаще одного раза за cooldown (по умолчанию 60&nbsp;с) — шторм
+    исключений не зальёт диск. Лимит файлов (по умолчанию 1000) вытесняет самое давнее исключение.
+    С серверными ошибками сохраняется HTTP-контекст запроса: метод, путь и <em>все заголовки</em>.</p>
+  </div>
+<pre><code>type: java.io.IOException
+hash: a1b2c3d4e5f60718
+count: 42
+firstSeenMillis: 1784712345678
+lastSeenMillis:  1784715678901
+message: Disk write failed
+
+--- context ---
+http_method: PUT
+http_path: /my-bucket/docs/report.pdf
+header_user-agent: aws-sdk-java/2.46.18
+
+--- stack trace ---
+java.io.IOException: Disk write failed
+	at ...</code></pre>
+</section>
+
+<!-- ==================================================== METRICS -->
+<section id="metrics">
+  <h2><span class="en">8. Metrics</span><span class="ru">8. Метрики</span></h2>
+  <div class="en">
+    <p>The core collects traffic counters (bytes/blobs written, read, deleted, errors), sliding-window
+    rates over the last 10 seconds (bytes/s and ops/s for reads and writes) and average speeds over
+    active I/O time. Counters are persisted to a properties file on the storage file pool every
+    10&nbsp;s (configurable) and on shutdown, then loaded back on open — totals <em>accumulate across
+    restarts</em>. The server adds HTTP counters per S3 operation. Everything is visible at
+    <code>GET /_admin/metrics</code>.</p>
+  </div>
+  <div class="ru">
+    <p>Ядро собирает счётчики трафика (байты/блобы записанные, прочитанные, удалённые, ошибки),
+    скорости в скользящем окне последних 10 секунд (байт/с и оп/с для чтения и записи) и средние
+    скорости за активное время ввода-вывода. Счётчики сохраняются в properties-файл на файловом пуле
+    хранилища каждые 10&nbsp;с (настраивается) и при остановке, а при открытии загружаются обратно —
+    накопление <em>переживает рестарты</em>. Сервер добавляет HTTP-счётчики по операциям S3.
+    Всё видно в <code>GET /_admin/metrics</code>.</p>
+  </div>
+</section>
+
+<!-- ==================================================== PERFORMANCE -->
+<section id="performance">
+  <h2><span class="en">9. Performance</span><span class="ru">9. Производительность</span></h2>
+  <div class="en">
+    <p>Measured on a developer laptop (Windows 11, 8 CPUs, NVMe SSD, Java 24), loopback network.
+    Run them yourself: <code>./gradlew test -Dboins.bench=true --tests "*Benchmark"</code>.</p>
+    <h3>Embedded core</h3>
+  </div>
+  <div class="ru">
+    <p>Замеры на ноутбуке разработчика (Windows 11, 8 CPU, NVMe SSD, Java 24), сеть — loopback.
+    Запуск: <code>./gradlew test -Dboins.bench=true --tests "*Benchmark"</code>.</p>
+    <h3>Ядро (embedded)</h3>
+  </div>
+  <table>
+    <tr><th class="en">Scenario</th><th class="ru">Сценарий</th><th class="num">MiB/s</th><th class="num">ops/s</th></tr>
+    <tr><td class="en">write 4 KiB blobs, fsync=NEVER</td><td class="ru">запись 4 КиБ, fsync=NEVER</td><td class="num">145</td><td class="num">37 100</td></tr>
+    <tr><td class="en">write 64 KiB blobs, fsync=NEVER</td><td class="ru">запись 64 КиБ, fsync=NEVER</td><td class="num">507</td><td class="num">8 100</td></tr>
+    <tr><td class="en">write 1 MiB blobs, fsync=NEVER</td><td class="ru">запись 1 МиБ, fsync=NEVER</td><td class="num">609</td><td class="num">609</td></tr>
+    <tr><td class="en">write 64 KiB, 8 threads</td><td class="ru">запись 64 КиБ, 8 потоков</td><td class="num">979</td><td class="num">15 700</td></tr>
+    <tr><td class="en">write 256 KiB into reused cells</td><td class="ru">запись 256 КиБ в переиспользуемые ячейки</td><td class="num">629</td><td class="num">2 500</td></tr>
+    <tr><td class="en">read 1 MiB, sequential / random (page cache)</td><td class="ru">чтение 1 МиБ, последовательное / случайное (кэш ОС)</td><td class="num">4 600 / 5 200</td><td class="num">—</td></tr>
+    <tr><td class="en">write 64 KiB, fsync=INTERVAL 1 s</td><td class="ru">запись 64 КиБ, fsync=INTERVAL 1 с</td><td class="num">383</td><td class="num">6 100</td></tr>
+    <tr><td class="en">write 64 KiB, fsync=ALWAYS</td><td class="ru">запись 64 КиБ, fsync=ALWAYS</td><td class="num">8.4</td><td class="num">135</td></tr>
+  </table>
+  <div class="en"><h3>S3 over HTTP (AWS SDK v2 client)</h3></div>
+  <div class="ru"><h3>S3 по HTTP (клиент AWS SDK v2)</h3></div>
+  <table>
+    <tr><th class="en">Scenario</th><th class="ru">Сценарий</th><th class="num">MiB/s</th><th class="num">ops/s</th></tr>
+    <tr><td class="en">PUT 1 MiB, 1 thread</td><td class="ru">PUT 1 МиБ, 1 поток</td><td class="num">71</td><td class="num">71</td></tr>
+    <tr><td class="en">GET 1 MiB, 1 thread</td><td class="ru">GET 1 МиБ, 1 поток</td><td class="num">138</td><td class="num">138</td></tr>
+    <tr><td class="en">PUT 64 KiB, 8 threads</td><td class="ru">PUT 64 КиБ, 8 потоков</td><td class="num">36</td><td class="num">574</td></tr>
+    <tr><td class="en">GET 64 KiB, 8 threads</td><td class="ru">GET 64 КиБ, 8 потоков</td><td class="num">69</td><td class="num">1 100</td></tr>
+  </table>
+  <div class="note">
+    <span class="en">HTTP numbers include SigV4 signing, aws-chunked framing and MD5 on the server — the
+    dominant cost at small object sizes is per-request overhead of the SDK client, not the storage engine.</span>
+    <span class="ru">HTTP-цифры включают подпись SigV4, aws-chunked-фрейминг и MD5 на сервере — при мелких
+    объектах доминирует надзапросный оверхед SDK-клиента, а не движок хранения.</span>
+  </div>
+</section>
+
+<!-- ==================================================== OPERATIONS -->
+<section id="operations">
+  <h2><span class="en">10. Operations</span><span class="ru">10. Эксплуатация</span></h2>
+  <h3><span class="en">Files on disk</span><span class="ru">Файлы на диске</span></h3>
+<pre><code>data/
+├─ repo1/
+│  ├─ manifest.boins        # format version + blobIdOffset
+│  ├─ index.boins           # 80-byte records
+│  ├─ blob.0.boins          # blob content, up to 2^blobFileLimit bytes each
+│  ├─ heap.boins            # keys + user metadata (append-only strings)
+│  ├─ content-types.boins   # content type dictionary
+│  ├─ free-cells.boins      # reusable cells registry
+│  └─ metrics.boins         # persisted counters
+├─ buckets/&lt;name&gt;/keys.boins       # key → blobId log (CRC-framed)
+├─ buckets/&lt;name&gt;/multipart/       # in-flight multipart temp parts
+└─ faults/&lt;Type&gt;-&lt;hash&gt;.txt        # exception reports</code></pre>
+  <div class="en">
+    <ul>
+      <li><b>Backup:</b> stop the server (or <code>POST /_admin/flush</code> and pause writes), copy the
+      data directory. All files are position-stable; the pair (repositories + bucket key indexes)
+      must be captured together.</li>
+      <li><b>Limits:</b> blob size ≤ 2<sup>blobFileLimit</sup>; keys ≤ 1024 bytes (S3 rule);
+      ≤ 32 768 blob files per repository; content types ≤ 32 767 distinct values.</li>
+      <li><b>Memory:</b> the key index of each bucket lives in RAM (~100 bytes per object);
+      the blob index does not — it is read positionally.</li>
+      <li><b>Capacity watch:</b> poll <code>/_admin/state</code> (usableSpace per repository, object
+      counts per bucket) and alert around 70&nbsp;% disk usage — that leaves time for recipe 12.7
+      (add a disk) or 12.11 (split a bucket) before the pressure becomes an incident.</li>
+      <li><b>Never</b> edit <code>manifest.boins</code> or change a repository's offset after creation.</li>
+    </ul>
+  </div>
+  <div class="ru">
+    <ul>
+      <li><b>Бэкап:</b> остановите сервер (или <code>POST /_admin/flush</code> и пауза записи), скопируйте
+      каталог данных. Все файлы позиционно-стабильны; репозитории и индексы ключей бакетов нужно
+      снимать вместе.</li>
+      <li><b>Лимиты:</b> размер блоба ≤ 2<sup>blobFileLimit</sup>; ключи ≤ 1024 байта (правило S3);
+      ≤ 32 768 blob-файлов на репозиторий; ≤ 32 767 различных content-type.</li>
+      <li><b>Память:</b> индекс ключей каждого бакета живёт в RAM (~100 байт на объект);
+      индекс блобов — нет, он читается позиционно.</li>
+      <li><b>Контроль ёмкости:</b> опрашивайте <code>/_admin/state</code> (usableSpace по репозиториям,
+      число объектов по бакетам) и ставьте алерт примерно на 70&nbsp;% заполнения диска — останется время
+      на рецепт 12.7 (добавить диск) или 12.11 (разделить бакет) до того, как теснота станет инцидентом.</li>
+      <li><b>Никогда</b> не редактируйте <code>manifest.boins</code> и не меняйте offset существующего репозитория.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ==================================================== DEPLOYMENT -->
+<section id="deployment">
+  <h2><span class="en">11. Deploying on Linux (systemd)</span><span class="ru">11. Развёртывание на Linux (systemd)</span></h2>
+  <div class="en">
+    <p>The steps below are identical on Ubuntu/Debian and CentOS/RHEL/Alma — the two places
+    where the distributions differ (installing Java and opening the firewall port) are marked
+    explicitly. Any Java 24+ runtime works.</p>
+    <h3>Step 1 — install Java</h3>
+  </div>
+  <div class="ru">
+    <p>Шаги ниже одинаковы для Ubuntu/Debian и CentOS/RHEL/Alma — два места, где дистрибутивы
+    различаются (установка Java и открытие порта в фаерволе), помечены явно. Подойдёт любая
+    Java 24+.</p>
+    <h3>Шаг 1 — установить Java</h3>
+  </div>
+<pre><code># Ubuntu / Debian:
+sudo apt install openjdk-24-jre-headless
+
+# CentOS / RHEL / Alma:
+sudo dnf install java-24-openjdk-headless
+
+# (package names may vary by release; Eclipse Temurin builds work everywhere)</code></pre>
+
+  <div class="en"><h3>Step 2 — build and install the distribution</h3></div>
+  <div class="ru"><h3>Шаг 2 — собрать и установить дистрибутив</h3></div>
+<pre><code># on the build machine
+./gradlew :boins-server:installDist
+
+# copy build/install/boins-server to the target host, e.g.:
+sudo mkdir -p /opt/boins
+sudo cp -r build/install/boins-server/* /opt/boins/</code></pre>
+
+  <div class="en"><h3>Step 3 — a dedicated user, data and configuration</h3></div>
+  <div class="ru"><h3>Шаг 3 — отдельный пользователь, данные и конфигурация</h3></div>
+<pre><code>sudo useradd --system --home /var/lib/boins --shell /usr/sbin/nologin boins
+sudo mkdir -p /var/lib/boins /etc/boins
+sudo chown -R boins:boins /var/lib/boins
+
+sudo nano /etc/boins/boins.yaml     # see section 4; point repositories, faults
+                                    # and bucketDataDir under /var/lib/boins</code></pre>
+
+  <div class="en"><h3>Step 4 — the systemd unit</h3></div>
+  <div class="ru"><h3>Шаг 4 — unit-файл systemd</h3></div>
+<pre><code># /etc/systemd/system/boins.service
+[Unit]
+Description=Boins S3-compatible blob storage
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=boins
+Group=boins
+WorkingDirectory=/var/lib/boins
+ExecStart=/opt/boins/bin/boins-server /etc/boins/boins.yaml
+Restart=on-failure
+RestartSec=3
+
+# systemd stops the service with SIGTERM, which triggers the Boins graceful
+# shutdown: new requests get 503, in-flight ones are drained, files are flushed.
+# Keep TimeoutStopSec above gracefulShutdownMillis from boins.yaml.
+KillSignal=SIGTERM
+TimeoutStopSec=30
+
+LimitNOFILE=65536
+NoNewPrivileges=true
+ProtectSystem=full
+ReadWritePaths=/var/lib/boins
+
+[Install]
+WantedBy=multi-user.target</code></pre>
+<pre><code>sudo systemctl daemon-reload
+sudo systemctl enable --now boins
+systemctl status boins
+journalctl -u boins -f              # logs</code></pre>
+
+  <div class="en"><h3>Step 5 — open the port</h3></div>
+  <div class="ru"><h3>Шаг 5 — открыть порт</h3></div>
+<pre><code># Ubuntu / Debian (ufw):
+sudo ufw allow 9000/tcp
+
+# CentOS / RHEL / Alma (firewalld):
+sudo firewall-cmd --permanent --add-port=9000/tcp
+sudo firewall-cmd --reload</code></pre>
+
+  <div class="note">
+    <span class="en">Graceful shutdown flow on <code>systemctl stop boins</code>: SIGTERM → JVM shutdown
+    hook → the server rejects new requests with 503 and waits up to
+    <code>gracefulShutdownMillis</code> for in-flight requests → key indexes, storage and metrics
+    are flushed → the process exits. If the process exceeds <code>TimeoutStopSec</code>, systemd
+    escalates to SIGKILL — the startup cross-checks will still recover, but a clean stop is
+    always preferable.</span>
+    <span class="ru">Как проходит graceful shutdown при <code>systemctl stop boins</code>: SIGTERM →
+    shutdown-hook JVM → сервер отвечает 503 на новые запросы и ждёт до
+    <code>gracefulShutdownMillis</code> завершения текущих → сбрасываются индексы ключей, хранилище
+    и метрики → процесс завершается. Если процесс не уложился в <code>TimeoutStopSec</code>, systemd
+    пошлёт SIGKILL — стартовые самопроверки всё восстановят, но чистая остановка всегда
+    предпочтительнее.</span>
+  </div>
+</section>
+
+<!-- ==================================================== RECIPES -->
+<section id="recipes">
+  <h2><span class="en">12. Recipes: typical web-app tasks</span><span class="ru">12. Рецепты: типовые задачи веб-приложений</span></h2>
+
+  <h3><span class="en">12.1 Avatar upload straight from the browser</span><span class="ru">12.1 Загрузка аватара прямо из браузера</span></h3>
+  <div class="en">
+    <p>The direct-to-storage pattern: your backend issues a short-lived presigned PUT URL, and the
+    browser uploads the file to Boins directly — the image bytes never pass through your app.
+    Enable CORS for your site's origin in <code>boins.yaml</code> first
+    (<code>cors.allowedOrigins</code>, section 4).</p>
+  </div>
+  <div class="ru">
+    <p>Паттерн Direct-to-Storage: ваш бэкенд выдаёт короткоживущую подписанную PUT-ссылку, и браузер
+    загружает файл в Boins напрямую — байты картинки вообще не проходят через ваше приложение.
+    Сначала включите CORS для origin вашего сайта в <code>boins.yaml</code>
+    (<code>cors.allowedOrigins</code>, раздел 4).</p>
+  </div>
+<pre><code>// Backend (Java): issue an upload URL valid for 5 minutes
+PresignedPutObjectRequest presigned = presigner.presignPutObject(b -> b
+        .signatureDuration(Duration.ofMinutes(5))
+        .putObjectRequest(p -> p.bucket("app-media")
+                .key("avatars/" + userId + ".jpg")
+                .contentType("image/jpeg")));
+return presigned.url().toString();     // hand it to the frontend</code></pre>
+<pre><code>// Frontend (JS): upload the picked file directly to Boins
+const url = await fetch("/api/avatar-upload-url").then(r => r.text());
+await fetch(url, {
+  method: "PUT",
+  headers: { "Content-Type": "image/jpeg" },   // must match what was signed
+  body: fileInput.files[0]
+});</code></pre>
+
+  <h3><span class="en">12.2 Time-limited download links with a nice filename</span><span class="ru">12.2 Временные ссылки на скачивание с человеческим именем файла</span></h3>
+  <div class="en">
+    <p>A presigned GET makes any blob downloadable for a limited time without exposing
+    credentials. The signed <code>response-content-disposition</code> override controls the filename
+    the browser saves:</p>
+  </div>
+  <div class="ru">
+    <p>Подписанный GET делает любой блоб скачиваемым на ограниченное время без раскрытия ключей.
+    Подписанное переопределение <code>response-content-disposition</code> задаёт имя файла, под
+    которым его сохранит браузер:</p>
+  </div>
+<pre><code>PresignedGetObjectRequest link = presigner.presignGetObject(b -> b
+        .signatureDuration(Duration.ofHours(1))
+        .getObjectRequest(g -> g.bucket("app-media")
+                .key("exports/report-8451.bin")
+                .responseContentDisposition("attachment; filename=\"annual-report.pdf\"")
+                .responseContentType("application/pdf")));
+// e.g. redirect the user: HTTP 302 Location: link.url()</code></pre>
+
+  <h3><span class="en">12.3 Storing files generated by the backend</span><span class="ru">12.3 Хранение файлов, сгенерированных бэкендом</span></h3>
+  <div class="en">
+    <p>Reports, invoices, thumbnails: write them with the SDK, keep only the key in your database,
+    and serve them later with a presigned redirect (recipe 12.2) instead of proxying bytes:</p>
+  </div>
+  <div class="ru">
+    <p>Отчёты, счета, превью: записывайте их SDK-клиентом, храните в своей БД только ключ,
+    а отдавайте потом редиректом на подписанную ссылку (рецепт 12.2), не проксируя байты:</p>
+  </div>
+<pre><code>byte[] pdf = reportRenderer.render(orderId);
+s3.putObject(b -> b.bucket("app-media")
+        .key("invoices/" + orderId + ".pdf")
+        .contentType("application/pdf")
+        .metadata(Map.of("order-id", String.valueOf(orderId))),
+        RequestBody.fromBytes(pdf));
+// store "invoices/{orderId}.pdf" in the orders table</code></pre>
+
+  <h3><span class="en">12.4 Per-user file spaces via key prefixes</span><span class="ru">12.4 Личные пространства пользователей через префиксы ключей</span></h3>
+  <div class="en">
+    <p>S3 keys are hierarchical by convention: use a prefix per user and list it when rendering
+    their file manager. Listing is a sorted in-memory scan — cheap even for large buckets:</p>
+  </div>
+  <div class="ru">
+    <p>Ключи S3 иерархичны по соглашению: используйте префикс на пользователя и листайте его,
+    когда рисуете файловый менеджер. Листинг — отсортированный проход по памяти, дёшево даже
+    для больших бакетов:</p>
+  </div>
+<pre><code>ListObjectsV2Response files = s3.listObjectsV2(b -> b.bucket("app-media")
+        .prefix("users/" + userId + "/")
+        .delimiter("/"));            // subfolders arrive as commonPrefixes()
+for (S3Object o : files.contents()) {
+    render(o.key(), o.size(), o.lastModified());
+}</code></pre>
+
+  <h3><span class="en">12.5 Large files and backups</span><span class="ru">12.5 Большие файлы и бэкапы</span></h3>
+  <div class="en">
+    <p>S3 tooling splits large uploads into multipart automatically — no special code needed:</p>
+  </div>
+  <div class="ru">
+    <p>Инструменты S3 сами разбивают большие загрузки на multipart — специальный код не нужен:</p>
+  </div>
+<pre><code># AWS CLI uploads big files as multipart automatically
+aws s3 cp backup-2026-07-17.tar.zst s3://backups/db/ \
+    --endpoint-url http://boins.internal:9000
+
+# In Java, S3TransferManager does the same for the SDK</code></pre>
+
+  <h3><span class="en">12.6 An embedded attachment store inside a monolith</span><span class="ru">12.6 Встроенное хранилище вложений внутри монолита</span></h3>
+  <div class="en">
+    <p>No server at all: open the core from a YAML file next to your app data, store the returned
+    blob id in a database column, stream on demand:</p>
+  </div>
+  <div class="ru">
+    <p>Вообще без сервера: откройте ядро из YAML-файла рядом с данными приложения, храните
+    возвращённый идентификатор блоба в колонке БД, отдавайте потоково по запросу:</p>
+  </div>
+<pre><code>Boins boins = Boins.open(Path.of("./data/boins/boins-options.yaml"));
+
+// attach a file to a ticket
+WriteResult w = boins.write(uploadedStream, contentLength,
+        new BlobMetadata(originalFilename, mimeType));
+ticketDao.saveAttachment(ticketId, w.blobId(), originalFilename);
+
+// stream it back in a servlet / controller
+BlobInfo info = boins.info(blobId);
+response.setContentType(info.contentType());
+response.setContentLengthLong(info.size());
+try (InputStream in = boins.read(blobId)) {
+    in.transferTo(response.getOutputStream());
+}</code></pre>
+
+  <h3><span class="en">12.7 Growing a server: a new disk, a new repository</span><span class="ru">12.7 Расширение сервера: новый диск, новый репозиторий</span></h3>
+  <div class="en">
+    <p>The disk is filling up — mount another one and add a repository to the storage section.
+    Two rules: <b>never change the offset of an existing repository</b>, and give the new one an
+    offset far above every id that could already exist (steps of 10¹² leave room for ~10¹² blobs
+    per repository):</p>
+  </div>
+  <div class="ru">
+    <p>Диск заполняется — подключите ещё один и добавьте репозиторий в секцию storage. Два правила:
+    <b>никогда не меняйте offset существующего репозитория</b> и дайте новому offset заведомо выше
+    всех уже возможных id (шаг 10¹² оставляет место под ~10¹² блобов на репозиторий):</p>
+  </div>
+<pre><code>storage:
+  repositories:
+    - dir: /data/nvme1/repo1
+      blobIdOffset: 0              # existing repository — untouched
+      diskType: SSD
+    - dir: /data/nvme2/repo2       # the new disk
+      blobIdOffset: 1000000000000  # 10^12 — far above any existing id
+      diskType: SSD</code></pre>
+  <div class="en">
+    <p>Restart the server (graceful — a systemctl restart is enough). Existing blobs stay exactly where
+    they are; new inserts immediately start balancing across both disks, weighted by free space.</p>
+    <p><b>Moving a repository to a bigger disk on the same server</b> works the same way: stop the
+    server, move the directory (<code>mv /data/old/repo1 /data/new/repo1</code>), update its
+    <code>dir:</code> in the config, start. The manifest inside the directory carries the offset, so a
+    path change is safe — and a wrong directory is rejected at startup.</p>
+  </div>
+  <div class="ru">
+    <p>Перезапустите сервер (мягко — достаточно systemctl restart). Существующие блобы остаются на своих
+    местах; новые вставки сразу начинают распределяться по обоим дискам с весом по свободному месту.</p>
+    <p><b>Перенос репозитория на диск побольше в рамках того же сервера</b> делается так же: остановите
+    сервер, перенесите каталог (<code>mv /data/old/repo1 /data/new/repo1</code>), поправьте его
+    <code>dir:</code> в конфиге, запустите. Манифест внутри каталога хранит offset, поэтому смена пути
+    безопасна — а «не тот» каталог будет отвергнут при старте.</p>
+  </div>
+
+  <h3><span class="en">12.8 Scaling out: from one server to a fleet</span><span class="ru">12.8 Распределение: от одного сервера к парку</span></h3>
+  <div class="en">
+    <p>The startup grew and one machine is not enough. Boins servers are independent — scaling out is
+    an application-level pattern, not a cluster to operate:</p>
+    <ol>
+      <li><b>Shard by bucket.</b> A bucket lives wholly on one host. Split by data kind
+      (<code>user-media</code> → s3-a, <code>analytics</code> → s3-b) or by tenant ranges. Keep a
+      bucket&nbsp;→&nbsp;endpoint map in your app config; presigned URLs carry the host automatically.</li>
+      <li><b>Bring up the new server</b> (section 11) and, if a bucket must move, transfer it with
+      standard tooling — then flip the endpoint map:</li>
+    </ol>
+  </div>
+  <div class="ru">
+    <p>Стартап вырос, и одной машины мало. Серверы Boins независимы — распределение является паттерном
+    уровня приложения, а не кластером, который нужно администрировать:</p>
+    <ol>
+      <li><b>Шардируйте по бакетам.</b> Бакет целиком живёт на одном хосте. Делите по типу данных
+      (<code>user-media</code> → s3-a, <code>analytics</code> → s3-b) или по диапазонам тенантов.
+      Держите карту «бакет&nbsp;→&nbsp;endpoint» в конфиге приложения; presigned-ссылки сами содержат хост.</li>
+      <li><b>Поднимите новый сервер</b> (раздел 11) и, если бакет надо переместить, перенесите его
+      штатным инструментом — затем переключите карту endpoint-ов:</li>
+    </ol>
+  </div>
+<pre><code># move a whole bucket between servers (ids are internal — S3 level is the way).
+# aws s3 sync uses one endpoint per command, so stage through a directory:
+aws s3 sync s3://user-media ./migrate-user-media --endpoint-url http://s3-a.internal:9000
+aws s3 sync ./migrate-user-media s3://user-media --endpoint-url http://s3-b.internal:9000
+
+# or copy directly between two remotes with rclone (no staging, resumable):
+rclone sync boins-a:user-media boins-b:user-media --checksum</code></pre>
+  <div class="en">
+    <p><b>Plan for a future merge on day one:</b> give each server its own <code>blobIdOffset</code>
+    region — server A starts at 0, server B at 2·10¹², server C at 4·10¹². Ids will never collide
+    across the fleet, which keeps the fast file-level consolidation (12.9) available. And if you put
+    nginx or a load balancer in front, preserve the <code>Host</code> header — SigV4 signs it:</p>
+  </div>
+  <div class="ru">
+    <p><b>Планируйте будущее слияние с первого дня:</b> выделите каждому серверу свою область
+    <code>blobIdOffset</code> — сервер A начинается с 0, сервер B с 2·10¹², сервер C с 4·10¹².
+    Идентификаторы никогда не пересекутся в парке, и быстрая файловая консолидация (12.9) останется
+    доступной. А если перед сервером стоит nginx или балансировщик — сохраняйте заголовок
+    <code>Host</code>: он входит в подпись SigV4:</p>
+  </div>
+<pre><code># nginx in front of Boins
+location / {
+    proxy_pass http://127.0.0.1:9000;
+    proxy_set_header Host $host;      # SigV4 signs the Host header
+    proxy_request_buffering off;      # stream uploads, don't spool to disk
+    client_max_body_size 0;           # Boins enforces its own limits
+}</code></pre>
+
+  <h3><span class="en">12.9 Consolidating: many servers back into one</span><span class="ru">12.9 Консолидация: несколько серверов снова в один</span></h3>
+  <div class="en">
+    <p>The opposite case: capacity was planned for high load, the load never came, and one machine is
+    plenty. Two paths, from universal to fastest:</p>
+    <p><b>Path 1 — S3-level sync (always works).</b> Define all the buckets on the target server, copy
+    each bucket with <code>aws s3 sync</code>/rclone from its old host, switch the endpoint map,
+    decommission the old servers. Blob ids are reassigned and the storage is repacked densely — the
+    consolidated server starts clean. Keep the old servers read-only during the copy (easiest: point
+    all writers at the new endpoint first).</p>
+    <p><b>Path 2 — file-level adoption (no re-upload).</b> Possible when bucket names are unique
+    across servers <em>and</em> their repositories use non-overlapping offset regions (the 12.8
+    planning rule). Then the target server simply adopts the files:</p>
+  </div>
+  <div class="ru">
+    <p>Обратный случай: ёмкость закладывали под высокие нагрузки, нагрузка не пришла, и одной машины
+    достаточно. Два пути — от универсального к самому быстрому:</p>
+    <p><b>Путь 1 — синхронизация на уровне S3 (работает всегда).</b> Опишите все бакеты на целевом
+    сервере, перелейте каждый бакет <code>aws s3 sync</code>/rclone с его старого хоста, переключите
+    карту endpoint-ов, выведите старые серверы из эксплуатации. Идентификаторы блобов назначаются
+    заново, хранилище пересобирается плотно — консолидированный сервер начинает «с чистого листа».
+    На время копирования держите старые серверы в режиме «только чтение» (проще всего сначала
+    перевести всех писателей на новый endpoint).</p>
+    <p><b>Путь 2 — файловое принятие (без перезаливки).</b> Возможен, когда имена бакетов уникальны
+    между серверами <em>и</em> их репозитории используют непересекающиеся области offset-ов (правило
+    планирования из 12.8). Тогда целевой сервер просто принимает файлы:</p>
+  </div>
+<pre><code># 1. stop every old server (graceful)         systemctl stop boins
+# 2. copy all repository dirs to the target host
+# 3. list them ALL in the target storage config with their ORIGINAL offsets:
+storage:
+  repositories:
+    - { dir: /data/a-repo1, blobIdOffset: 0 }              # from server A
+    - { dir: /data/a-repo2, blobIdOffset: 1000000000000 }  # from server A
+    - { dir: /data/b-repo1, blobIdOffset: 2000000000000 }  # from server B
+# 4. copy each bucket dir (keys.boins) from the old servers
+#    into the target bucketDataDir, and declare the buckets in the config
+# 5. start; check /_admin/state — blob counts must match the old servers</code></pre>
+  <div class="note">
+    <span class="en">Path 2 caveats: manifests verify every adopted repository (a wrong offset is
+    rejected at startup). Keep only the target's <code>free-cells.boins</code> and metrics file —
+    the old servers' registries are discarded, which merely leaks their reusable cells (bounded,
+    observable in <code>/_admin/state</code>). If offsets collide between servers, path 2 is
+    impossible — use path 1.</span>
+    <span class="ru">Оговорки пути 2: манифесты проверяют каждый принятый репозиторий («не тот» offset
+    отвергается при старте). Оставьте только <code>free-cells.boins</code> и файл метрик целевого
+    сервера — реестры старых серверов отбрасываются, что лишь теряет их переиспользуемые ячейки
+    (ограниченно, видно в <code>/_admin/state</code>). Если offset-ы серверов пересекаются, путь 2
+    невозможен — используйте путь 1.</span>
+  </div>
+
+  <h3><span class="en">12.10 Moving a whole server to a new host</span><span class="ru">12.10 Переезд сервера на новый хост целиком</span></h3>
+  <div class="en">
+    <ol>
+      <li><code>systemctl stop boins</code> on the old host — the graceful shutdown drains requests
+      and flushes every file.</li>
+      <li>Copy the data and the config: <code>/var/lib/boins</code> (repositories, buckets, faults)
+      and <code>/etc/boins/boins.yaml</code>; install the distribution on the new host (section 11).</li>
+      <li>Same paths → zero config edits. Different paths → update <code>dir:</code>,
+      <code>bucketDataDir</code>, <code>faults.dir</code>; repositories are relocatable, the manifest
+      carries their identity.</li>
+      <li>Start, then compare <code>/_admin/state</code> (blob counts, max ids) with the old host
+      before repointing DNS or the endpoint map.</li>
+    </ol>
+  </div>
+  <div class="ru">
+    <ol>
+      <li><code>systemctl stop boins</code> на старом хосте — graceful shutdown дообслужит запросы
+      и сбросит все файлы на диск.</li>
+      <li>Скопируйте данные и конфиг: <code>/var/lib/boins</code> (репозитории, бакеты, faults)
+      и <code>/etc/boins/boins.yaml</code>; установите дистрибутив на новом хосте (раздел 11).</li>
+      <li>Пути совпадают → конфиг не трогаем. Пути другие → обновите <code>dir:</code>,
+      <code>bucketDataDir</code>, <code>faults.dir</code>; репозитории переносимы, манифест несёт их
+      идентичность.</li>
+      <li>Запустите и сравните <code>/_admin/state</code> (число блобов, максимальные id) со старым
+      хостом, прежде чем переключать DNS или карту endpoint-ов.</li>
+    </ol>
+  </div>
+
+  <h3><span class="en">12.11 Server selection and bucket planning</span><span class="ru">12.11 Выбор сервера и планирование бакетов</span></h3>
+  <div class="en">
+    <p>With several Boins servers, a read must land on the host that has the object — so the location
+    of every blob must be <em>computable</em>, never searched for. The routing key is
+    <code>(bucket,&nbsp;key)</code>: blob ids are internal and never leave a host. Three schemes, in
+    order of growth:</p>
+    <ol>
+      <li><b>Bucket → endpoint map</b> in the application config (<code>user-media → s3-a</code>).
+      Simplest; enough while every bucket fits its server.</li>
+      <li><b>Entity sharding.</b> Shard by a <em>stable entity</em> — user id, tenant id — not by
+      object: <code>shard = hash(userId) % N</code> → bucket <code>media-3</code> → its endpoint.
+      Reads recompute the same hash. An entity's files stay together, prefix listing keeps working,
+      and rebalancing moves entities, not random objects.</li>
+      <li><b>A directory in your database.</b> Choose the server at upload time and store
+      <code>(key, endpoint)</code> in the row you already keep for the file. Reads hit that row
+      anyway, so the endpoint is free; rebalancing is copy&nbsp;+&nbsp;update the row.</li>
+    </ol>
+    <p>When assigning a server to a <em>new</em> entity, pick it like Boins picks repositories:
+    randomly, <b>weighted by free space</b> (from <code>/_admin/state</code>, cached for minutes).
+    Presigned URLs work with every scheme — the backend embeds the right host when signing.</p>
+    <p><b>Planning so a bucket never outgrows a server:</b></p>
+    <ul>
+      <li>If a data kind can grow unboundedly, <b>shard it from day one</b>: create
+      <code>media-0…media-7</code> even if all eight start on one server. Splitting later is then
+      "move whole buckets" (trivial, recipe 12.8) instead of "split one bucket" (migration below).</li>
+      <li>Keys always carry an entity prefix (<code>users/{id}/…</code>) — this is what makes lazy
+      migration and per-entity moves possible at all.</li>
+      <li>Watch <code>/_admin/state</code> and act at ~70&nbsp;% disk usage: recipe 12.7 (add a disk)
+      buys time cheaply.</li>
+    </ul>
+    <p><b>The bucket did outgrow its server — the split procedure:</b></p>
+    <ol>
+      <li>Buy time: add a repository on a new disk (12.7).</li>
+      <li>Create shard buckets on two (or more) servers, e.g. <code>media-0</code> on&nbsp;A,
+      <code>media-1</code> on&nbsp;B. Route <b>new</b> writes by entity hash immediately.</li>
+      <li>Migrate old entities in the background, prefix by prefix:
+      <code>aws s3 sync</code>/rclone of <code>users/{id}/…</code> to the entity's new shard.</li>
+      <li>During migration read with a fallback: try the new location, on 404 read the old bucket
+      (or track a per-entity "migrated" flag in the database — cleaner).</li>
+      <li>When the sync is complete, drop the fallback and delete the old bucket from the config.</li>
+    </ol>
+    <p>If keys have no entity prefix and hashing is impossible, use scheme&nbsp;3: point new uploads
+    at the new bucket via the database row, leave old rows on the old server, and migrate lazily or
+    not at all.</p>
+  </div>
+  <div class="ru">
+    <p>Когда серверов Boins несколько, чтение обязано попасть на хост, где объект лежит, — значит,
+    расположение каждого блоба должно <em>вычисляться</em>, а не разыскиваться. Ключ маршрутизации —
+    <code>(bucket,&nbsp;key)</code>: идентификаторы блобов внутренние и хост не покидают. Три схемы,
+    по мере роста:</p>
+    <ol>
+      <li><b>Карта «бакет → endpoint»</b> в конфиге приложения (<code>user-media → s3-a</code>).
+      Проще всего; достаточно, пока каждый бакет помещается на свой сервер.</li>
+      <li><b>Шардирование по сущности.</b> Делите по <em>стабильной сущности</em> — id пользователя,
+      id тенанта, — а не по объекту: <code>shard = hash(userId) % N</code> → бакет
+      <code>media-3</code> → его endpoint. Чтение вычисляет тот же hash. Файлы сущности лежат вместе,
+      листинг по префиксу работает, а ребаланс переносит сущности, а не случайные объекты.</li>
+      <li><b>Директория в вашей БД.</b> Выбирайте сервер в момент загрузки и храните
+      <code>(key, endpoint)</code> в строке, которую вы и так ведёте для файла. Чтение всё равно идёт
+      через эту строку, так что endpoint достаётся бесплатно; ребаланс — это копирование&nbsp;+&nbsp;обновление строки.</li>
+    </ol>
+    <p>Назначая сервер <em>новой</em> сущности, выбирайте его так же, как Boins выбирает репозитории:
+    случайно, <b>с весом по свободному месту</b> (из <code>/_admin/state</code>, с кэшем на минуты).
+    Presigned-ссылки работают при любой схеме — бэкенд подставляет нужный хост при подписи.</p>
+    <p><b>Планирование, чтобы бакет не перерос сервер:</b></p>
+    <ul>
+      <li>Если вид данных может расти неограниченно — <b>шардируйте с первого дня</b>: заведите
+      <code>media-0…media-7</code>, даже если все восемь стартуют на одном сервере. Тогда «разделить»
+      в будущем — это «перевезти целые бакеты» (тривиально, рецепт 12.8), а не «распилить один бакет»
+      (миграция ниже).</li>
+      <li>Ключи всегда несут префикс сущности (<code>users/{id}/…</code>) — именно это делает
+      возможными ленивую миграцию и переезды по-сущностно.</li>
+      <li>Следите за <code>/_admin/state</code> и действуйте при ~70&nbsp;% заполнения диска:
+      рецепт 12.7 (добавить диск) дёшево покупает время.</li>
+    </ul>
+    <p><b>Бакет всё-таки перерос сервер — процедура разделения:</b></p>
+    <ol>
+      <li>Купите время: добавьте репозиторий на новом диске (12.7).</li>
+      <li>Создайте шард-бакеты на двух (или более) серверах, например <code>media-0</code> на&nbsp;A,
+      <code>media-1</code> на&nbsp;B. <b>Новые</b> записи сразу маршрутизируйте по hash сущности.</li>
+      <li>Старые сущности мигрируйте в фоне, префикс за префиксом:
+      <code>aws s3 sync</code>/rclone каталога <code>users/{id}/…</code> в новый шард сущности.</li>
+      <li>На время миграции читайте с фолбэком: сначала новое место, при 404 — старый бакет
+      (или ведите в БД флаг «мигрирован» по сущности — так чище).</li>
+      <li>Когда синхронизация завершена, уберите фолбэк и удалите старый бакет из конфига.</li>
+    </ol>
+    <p>Если в ключах нет префикса сущности и hash невозможен — используйте схему&nbsp;3: новые загрузки
+    направляйте в новый бакет через строку БД, старые строки оставьте на старом сервере и мигрируйте
+    лениво или вовсе не мигрируйте.</p>
+  </div>
+</section>
+
+<!-- ==================================================== COMPARISON -->
+<section id="comparison">
+  <h2><span class="en">13. Boins vs. the alternatives</span><span class="ru">13. Сравнение с аналогами</span></h2>
+  <div class="en">
+    <p>An honest map of the territory. Boins does not try to be a distributed storage system — it is
+    a <em>minimal single-node engine</em> with an S3 face and application-level sharding. That choice
+    is exactly what makes it tiny, fast and simple to operate; it is also what it costs.</p>
+  </div>
+  <div class="ru">
+    <p>Честная карта местности. Boins не пытается быть распределённой системой хранения — это
+    <em>минималистичный однонодовый движок</em> с S3-фасадом и шардированием на уровне приложения.
+    Ровно этот выбор делает его крошечным, быстрым и простым в эксплуатации; он же — его цена.</p>
+  </div>
+  <table>
+    <tr>
+      <th></th><th>Boins</th><th>MinIO</th><th>SeaweedFS</th><th>Ceph&nbsp;(RGW)</th>
+    </tr>
+    <tr>
+      <td class="en">Profile</td><td class="ru">Профиль</td>
+      <td class="en">single-node engine, S3 API, app-level sharding</td>
+      <td class="ru">однонодовый движок, S3 API, шардирование в приложении</td>
+      <td class="en">distributed object store, erasure coding, IAM</td>
+      <td class="ru">распределённое объектное хранилище, erasure coding, IAM</td>
+      <td class="en">distributed FS + S3 gateway, haystack-style packing</td>
+      <td class="ru">распределённая ФС + S3-шлюз, упаковка в стиле haystack</td>
+      <td class="en">datacenter-scale unified storage, S3 via RGW</td>
+      <td class="ru">хранилище масштаба ЦОД, S3 через RGW</td>
+    </tr>
+    <tr>
+      <td class="en">Embedded mode (in-JVM)</td><td class="ru">Embedded-режим (в JVM)</td>
+      <td>✔ <span class="en">zero-dependency library</span><span class="ru">библиотека без зависимостей</span></td>
+      <td>—</td>
+      <td>—</td>
+      <td>—</td>
+    </tr>
+    <tr>
+      <td class="en">Built-in replication / erasure</td><td class="ru">Встроенная репликация / erasure</td>
+      <td><span class="en">— (disks + backups + app sharding)</span><span class="ru">— (диски + бэкапы + шардирование приложением)</span></td>
+      <td>✔</td>
+      <td>✔</td>
+      <td>✔</td>
+    </tr>
+    <tr>
+      <td class="en">Millions of small files</td><td class="ru">Миллионы мелких файлов</td>
+      <td><span class="en">✔ packed into big files, 80-byte index records</span><span class="ru">✔ упакованы в большие файлы, записи индекса по 80 байт</span></td>
+      <td><span class="en">one object ≈ one FS file (+ metadata)</span><span class="ru">объект ≈ файл ФС (+ метаданные)</span></td>
+      <td><span class="en">✔ packing is its core idea too</span><span class="ru">✔ упаковка — тоже его ключевая идея</span></td>
+      <td><span class="en">✔ RADOS objects</span><span class="ru">✔ объекты RADOS</span></td>
+    </tr>
+    <tr>
+      <td class="en">Ops complexity</td><td class="ru">Сложность эксплуатации</td>
+      <td><span class="en">systemd unit + one YAML</span><span class="ru">systemd-unit + один YAML</span></td>
+      <td class="en">low–medium (cluster mode: quorum, drives)</td>
+      <td class="ru">низкая–средняя (кластер: кворум, диски)</td>
+      <td class="en">medium (masters, volume servers, filer)</td>
+      <td class="ru">средняя (мастера, volume-серверы, filer)</td>
+      <td class="en">high (MON/OSD/MDS, a discipline of its own)</td>
+      <td class="ru">высокая (MON/OSD/MDS, отдельная дисциплина)</td>
+    </tr>
+    <tr>
+      <td class="en">Footprint / runtime</td><td class="ru">Footprint / рантайм</td>
+      <td><span class="en">2 small jars, JVM, ~0 deps</span><span class="ru">2 небольших jar, JVM, ~0 зависимостей</span></td>
+      <td>Go, <span class="en">single binary</span><span class="ru">один бинарь</span></td>
+      <td>Go, <span class="en">several roles</span><span class="ru">несколько ролей</span></td>
+      <td>C++, <span class="en">a fleet of daemons</span><span class="ru">парк демонов</span></td>
+    </tr>
+    <tr>
+      <td class="en">License</td><td class="ru">Лицензия</td>
+      <td>Apache-2.0</td>
+      <td>AGPL-3.0</td>
+      <td>Apache-2.0</td>
+      <td>LGPL</td>
+    </tr>
+  </table>
+  <div class="en">
+    <p><b>When to pick what.</b> Boins — when you want an attachment/media store for an application:
+    embedded or one-to-few servers, S3 clients, minimal moving parts, and you accept that durability
+    is your disks plus your backups (plus async replication, see section 14). MinIO — when you need
+    built-in redundancy, IAM policies and versioning out of the box. SeaweedFS — when you like the
+    same packing idea but need it distributed. Ceph — when storage <em>is</em> your platform and you
+    have the team for it.</p>
+    <h3>Against the cloud: the cost angle</h3>
+    <p>Indicative list prices (mid-2026, rounded — always check current pricing). A workload of
+    <b>10&nbsp;TB stored + 20&nbsp;TB egress per month</b>:</p>
+  </div>
+  <div class="ru">
+    <p><b>Что когда выбирать.</b> Boins — когда нужно хранилище вложений/медиа для приложения:
+    embedded или один-несколько серверов, S3-клиенты, минимум движущихся частей, и вы принимаете, что
+    надёжность — это ваши диски плюс ваши бэкапы (плюс асинхронная репликация, см. раздел 14).
+    MinIO — когда нужны встроенная избыточность, IAM-политики и версионирование из коробки.
+    SeaweedFS — когда нравится та же идея упаковки, но нужна распределённость. Ceph — когда хранилище
+    и <em>есть</em> ваша платформа, и на него есть команда.</p>
+    <h3>Против облака: аспект стоимости</h3>
+    <p>Ориентировочные публичные прайсы (середина 2026, округлённо — всегда сверяйте актуальные).
+    Нагрузка <b>10&nbsp;ТБ хранения + 20&nbsp;ТБ исходящего трафика в месяц</b>:</p>
+  </div>
+  <table>
+    <tr>
+      <th></th>
+      <th class="en">Storage / mo</th><th class="ru">Хранение / мес</th>
+      <th class="en">Egress / mo</th><th class="ru">Трафик / мес</th>
+      <th class="en">≈ Total / mo</th><th class="ru">≈ Итого / мес</th>
+    </tr>
+    <tr>
+      <td>AWS S3 Standard</td>
+      <td class="num">~$230</td><td class="num">~$1&nbsp;700</td><td class="num"><b>~$1&nbsp;900</b></td>
+    </tr>
+    <tr>
+      <td>Backblaze B2</td>
+      <td class="num">~$60</td><td class="num">~$200*</td><td class="num"><b>~$260</b></td>
+    </tr>
+    <tr>
+      <td>Cloudflare R2</td>
+      <td class="num">~$150</td><td class="num">$0</td><td class="num"><b>~$150</b></td>
+    </tr>
+    <tr>
+      <td class="en">Boins on a dedicated server (2×10&nbsp;TB)</td>
+      <td class="ru">Boins на выделенном сервере (2×10&nbsp;ТБ)</td>
+      <td class="num">~$70–150 <span class="en">flat</span><span class="ru">фикс.</span></td>
+      <td class="num"><span class="en">usually included</span><span class="ru">обычно включён</span></td>
+      <td class="num"><b>~$70–150</b></td>
+    </tr>
+  </table>
+  <div class="note">
+    <span class="en">* B2 gives free egress up to 3× stored volume; the figure assumes the excess.
+    The cloud buys you 11-nines durability, geo-replication and zero ops — none of which the
+    dedicated-server row includes. The honest comparison: at steady, egress-heavy workloads
+    self-hosting is roughly an order of magnitude cheaper <em>if</em> you already carry the ops
+    burden of running servers. If not, R2/B2-class storage is the pragmatic middle ground.</span>
+    <span class="ru">* B2 даёт бесплатный трафик до 3× хранимого объёма; цифра — с учётом превышения.
+    Облако покупает вам надёжность «11 девяток», гео-репликацию и ноль эксплуатации — ничего из этого
+    в строке про выделенный сервер нет. Честное сравнение: на стабильной нагрузке с большим трафиком
+    самостоятельный хостинг примерно на порядок дешевле, <em>если</em> вы и так несёте бремя
+    эксплуатации серверов. Если нет — хранилища класса R2/B2 являются прагматичной серединой.</span>
+  </div>
+</section>
+
+<!-- ==================================================== ROADMAP -->
+<section id="roadmap">
+  <h2><span class="en">14. Where Boins can go</span><span class="ru">14. Пути развития Boins</span></h2>
+  <div class="en">
+    <p>Boins 2.0 is deliberately small. These are the directions that fit its philosophy — each adds
+    capability without adding a cluster to babysit. Roughly in order of expected value:</p>
+    <ul>
+      <li><b>Async bucket replication.</b> A built-in follower mode: a second Boins pulls a bucket
+      over the S3 API (ListObjects + conditional GET) on an interval. Warm standby and off-site
+      copies without external tooling — the biggest durability win available without touching the
+      core.</li>
+      <li><b>Read-time integrity.</b> The MD5 of every blob is already in the index record; an opt-in
+      mode could verify it on read, and a background scrubber could walk repositories and quarantine
+      bit-rot into the fault store.</li>
+      <li><b>Space reclamation.</b> A garbage collector for blobs orphaned by crash windows between
+      the key index and the core, and a compactor that rewrites sparse blob files (after mass
+      deletions) into dense ones — returning space to the filesystem, not only to Boins.</li>
+      <li><b>Key index beyond RAM.</b> Today a bucket's key index lives in memory (~100 bytes per
+      object). A tiered mode — hot prefix cache + on-disk sorted runs — would lift the practical
+      per-bucket ceiling into the billions.</li>
+      <li><b>More S3 surface.</b> Versioning, object tagging, lifecycle/TTL rules (auto-expiry is a
+      natural fit for the delete-and-reuse engine), POST policy uploads, per-bucket quotas.</li>
+      <li><b>Observability.</b> A Prometheus <code>/metrics</code> endpoint (the collector already
+      holds the numbers), S3 access logs, and a minimal HTML admin page over the existing JSON.</li>
+      <li><b>The host-selector client.</b> The thin library sketched in recipe 12.11: bucket map +
+      entity rendezvous hashing + free-space weights from <code>/_admin/state</code> — as a tiny
+      <code>boins-client</code> artifact.</li>
+      <li><b>Performance experiments.</b> Zero-copy GET (<code>FileChannel.transferTo</code> to the
+      socket), group commit for fsync=ALWAYS (amortize the sync across concurrent writers), and
+      io_uring-style backends as the JDK exposes them.</li>
+    </ul>
+    <p>The project is Apache-2.0 — issues and pull requests for any of the above are welcome. The
+    unfashionable goal stays the same: <em>stay small enough to read in an afternoon</em>.</p>
+  </div>
+  <div class="ru">
+    <p>Boins 2.0 намеренно мал. Вот направления, которые вписываются в его философию — каждое добавляет
+    возможности, не добавляя кластера, за которым нужно следить. Примерно в порядке ожидаемой пользы:</p>
+    <ul>
+      <li><b>Асинхронная репликация бакетов.</b> Встроенный режим «ведомого»: второй Boins по интервалу
+      подтягивает бакет через S3 API (ListObjects + условные GET). Тёплый резерв и офсайт-копии без
+      внешних инструментов — самый большой выигрыш в надёжности, доступный без изменений ядра.</li>
+      <li><b>Целостность при чтении.</b> MD5 каждого блоба уже лежит в индексной записи; опциональный
+      режим мог бы сверять его при чтении, а фоновый «скраббер» — обходить репозитории и отправлять
+      битые блобы в карантин через хранилище исключений.</li>
+      <li><b>Возврат места.</b> Сборщик мусора для блобов-сирот из крэш-окон между индексом ключей и
+      ядром, и компактор, переписывающий разреженные blob-файлы (после массовых удалений) в плотные —
+      возвращая место файловой системе, а не только Boins.</li>
+      <li><b>Индекс ключей за пределами RAM.</b> Сегодня индекс ключей бакета живёт в памяти
+      (~100 байт на объект). Ярусный режим — горячий кэш префиксов + сортированные сегменты на
+      диске — поднял бы практический потолок бакета до миллиардов объектов.</li>
+      <li><b>Больше поверхности S3.</b> Версионирование, теги объектов, lifecycle/TTL-правила
+      (автопротухание естественно ложится на движок удаления-и-переиспользования), POST policy
+      uploads, квоты по бакетам.</li>
+      <li><b>Наблюдаемость.</b> Prometheus-эндпоинт <code>/metrics</code> (коллектор уже хранит все
+      цифры), access-логи S3 и минимальная HTML-страница админки поверх существующего JSON.</li>
+      <li><b>Клиент-селектор хостов.</b> Тонкая библиотека из рецепта 12.11: карта бакетов +
+      rendezvous-hash по сущности + веса по свободному месту из <code>/_admin/state</code> — как
+      крошечный артефакт <code>boins-client</code>.</li>
+      <li><b>Эксперименты с производительностью.</b> Zero-copy GET
+      (<code>FileChannel.transferTo</code> в сокет), групповой коммит для fsync=ALWAYS (амортизация
+      синка между конкурентными писателями), бэкенды в духе io_uring по мере их появления в JDK.</li>
+    </ul>
+    <p>Проект под Apache-2.0 — issues и pull request'ы по любому из пунктов приветствуются. Немодная
+    цель остаётся прежней: <em>оставаться настолько маленьким, чтобы читаться за один вечер</em>.</p>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <div class="footer-inner">
+    <span class="en">Boins Book · Boins 2.0 by Vasily Buter · Apache License 2.0 · The book matches the code — when in doubt, the code wins.</span>
+    <span class="ru">Boins Book · Boins 2.0, автор — Vasily Buter · Лицензия Apache 2.0 · Книга соответствует коду — в спорных случаях прав код.</span>
+  </div>
+</footer>
+
+</div>
+
+<script>
+function setLang(lang) {
+  document.documentElement.setAttribute('data-lang', lang);
+  document.documentElement.setAttribute('lang', lang);
+  try { localStorage.setItem('boins-book-lang', lang); } catch (e) {}
+}
+function effectiveTheme() {
+  var forced = document.documentElement.getAttribute('data-theme');
+  if (forced) { return forced; }
+  var prefersLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
+  return prefersLight ? 'light' : 'dark';
+}
+function toggleTheme() {
+  var next = effectiveTheme() === 'light' ? 'dark' : 'light';
+  document.documentElement.setAttribute('data-theme', next);
+  try { localStorage.setItem('boins-book-theme', next); } catch (e) {}
+}
+(function () {
+  var lang = null;
+  var theme = null;
+  try {
+    lang = localStorage.getItem('boins-book-lang');
+    theme = localStorage.getItem('boins-book-theme');
+  } catch (e) {}
+  if (!lang) {
+    lang = (navigator.language || 'en').toLowerCase().startsWith('ru') ? 'ru' : 'en';
+  }
+  setLang(lang);
+  if (theme === 'light' || theme === 'dark') {
+    document.documentElement.setAttribute('data-theme', theme);
+  }
+})();
+</script>
+</body>
+</html>
