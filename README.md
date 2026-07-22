@@ -44,8 +44,9 @@ data/repo1/
 - On SSD, concurrent writers stream into disjoint reserved regions in parallel; on HDD,
   chunk-level serialization keeps the access pattern sequential without slow-client convoys.
 
-The full manual — architecture, formats, crash-consistency model, operations — is in the
-bilingual (EN/RU) **[Boins Book](docs/book/index.html)**.
+The full manual — architecture, formats, crash-consistency model, operations — is the
+bilingual (EN/RU) **Boins Book**: read it live at **<https://vab84.github.io/boins/>** or
+open [docs/index.html](docs/index.html) locally.
 
 ## Quick start: server
 
@@ -195,7 +196,7 @@ HTTPS round trip with a PEM certificate.
 ```
 boins-core/     storage engine, metrics, fault store   (zero dependencies)
 boins-server/   S3 API, admin API, TLS, YAML config    (Javalin, Jackson)
-docs/book/      Boins Book — the bilingual manual
+docs/           Boins Book — the bilingual manual (served on GitHub Pages)
 ```
 
 ## Compatibility notes
@@ -220,7 +221,7 @@ docs/book/      Boins Book — the bilingual manual
 ## Contributing
 
 Issues and pull requests are welcome. The codebase is intentionally small — start with the
-[Boins Book](docs/book/index.html), then read `boins-core` top to bottom (it's one afternoon).
+[Boins Book](https://vab84.github.io/boins/), then read `boins-core` top to bottom (it's one afternoon).
 
 ## License
 
